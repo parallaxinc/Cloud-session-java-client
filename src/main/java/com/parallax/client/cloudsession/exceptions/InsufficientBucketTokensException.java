@@ -5,6 +5,8 @@
  */
 package com.parallax.client.cloudsession.exceptions;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -13,9 +15,8 @@ import java.util.Date;
  */
 public class InsufficientBucketTokensException extends Exception {
 
-    private String type;
-    private int available;
-    private int required;
+    private static SimpleDateFormat DATE_TIME_FORMATTER = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+
     private Date nextTime;
     private static final String DEFAULT_MESSAGE = "Insufficient bucket tokens";
 
@@ -23,36 +24,12 @@ public class InsufficientBucketTokensException extends Exception {
         super(DEFAULT_MESSAGE);
     }
 
-    public InsufficientBucketTokensException(String type, int available, int required, Date nextTime) {
-        super(DEFAULT_MESSAGE);
-        this.type = type;
-        this.available = available;
-        this.required = required;
-        this.nextTime = nextTime;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public int getAvailable() {
-        return available;
-    }
-
-    public void setAvailable(int available) {
-        this.available = available;
-    }
-
-    public int getRequired() {
-        return required;
-    }
-
-    public void setRequired(int required) {
-        this.required = required;
+    public InsufficientBucketTokensException(String message, String nextTimeString) {
+        super(message);
+        try {
+            this.nextTime = DATE_TIME_FORMATTER.parse(nextTimeString);
+        } catch (ParseException pe) {
+        }
     }
 
     public Date getNextTime() {
