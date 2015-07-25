@@ -28,12 +28,13 @@ public class CloudSessionRegisterService {
         this.BASE_URL = baseUrl;
     }
 
-    public Long registerUser(String email, String password, String passwordConfirm, String locale) throws NonUniqueEmailException, PasswordVerifyException {
+    public Long registerUser(String email, String password, String passwordConfirm, String locale, String screenname) throws NonUniqueEmailException, PasswordVerifyException {
         Map<String, String> data = new HashMap<>();
         data.put("email", email);
         data.put("password", password);
         data.put("password-confirm", passwordConfirm);
         data.put("locale", locale);
+        data.put("screenname", screenname);
         HttpRequest request = HttpRequest.put(getUrl("user/register")).header("server", SERVER).form(data);
 //        int responseCode = request.code();
 //        System.out.println("Response code: " + responseCode);
