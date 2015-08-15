@@ -13,6 +13,7 @@ import com.parallax.client.cloudsession.exceptions.EmailAlreadyConfirmedExceptio
 import com.parallax.client.cloudsession.exceptions.InsufficientBucketTokensException;
 import com.parallax.client.cloudsession.exceptions.PasswordVerifyException;
 import com.parallax.client.cloudsession.exceptions.UnknownUserException;
+import com.parallax.client.cloudsession.exceptions.UnknownUserIdException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -125,6 +126,33 @@ public class CloudSessionLocalUserService {
 
     private String getUrl(String actionUrl) {
         return BASE_URL + actionUrl;
+    }
+
+    public boolean changePassword(Long idUser, String oldPassword, String password, String confirmPassword) throws UnknownUserIdException, PasswordVerifyException {
+        Map<String, String> data = new HashMap<>();
+        data.put("old-password", oldPassword);
+        data.put("password", password);
+        data.put("password-confirm", confirmPassword);
+        HttpRequest request = HttpRequest.post(getUrl("local/password/" + idUser)).form(data);
+//        int responseCode = request.code();
+//        System.out.println("Response code: " + responseCode);
+        String response = request.body();
+//        System.out.println(response);
+        JsonElement jelement = new JsonParser().parse(response);
+        JsonObject responseObject = jelement.getAsJsonObject();
+        if (responseObject.get("success").getAsBoolean()) {
+            return true;
+        } else {
+            switch (responseObject.get("code").getAsInt()) {
+                case 400:
+                    throw new UnknownUserIdException(responseObject.get("data").getAsString());
+                case 460:
+                    throw new PasswordVerifyException();
+                case 510:
+                    return false;
+            }
+            return false;
+        }
     }
 
 }
