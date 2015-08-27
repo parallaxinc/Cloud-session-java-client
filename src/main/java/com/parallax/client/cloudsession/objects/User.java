@@ -5,11 +5,13 @@
  */
 package com.parallax.client.cloudsession.objects;
 
+import java.io.Serializable;
+
 /**
  *
  * @author Michel
  */
-public class User {
+public class User implements Serializable {
 
     private Long id;
     private String email;

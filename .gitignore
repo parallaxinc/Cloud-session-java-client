@@ -1,3 +1,14 @@
+#################
+## NetBeans
+#################
+
 /target/
 nbactions.xml
 /.project
+
+
+#################
+## IntelliJ
+#################
+
+.idea
