@@ -11,8 +11,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.parallax.client.cloudsession.exceptions.NonUniqueEmailException;
 import com.parallax.client.cloudsession.exceptions.PasswordVerifyException;
+import com.parallax.client.cloudsession.exceptions.ServerException;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -20,6 +23,7 @@ import java.util.Map;
  */
 public class CloudSessionRegisterService {
 
+    private final Logger LOG = LoggerFactory.getLogger(CloudSessionRegisterService.class);
     private final String BASE_URL;
     private final String SERVER;
 
@@ -28,30 +32,35 @@ public class CloudSessionRegisterService {
         this.BASE_URL = baseUrl;
     }
 
-    public Long registerUser(String email, String password, String passwordConfirm, String locale, String screenname) throws NonUniqueEmailException, PasswordVerifyException {
-        Map<String, String> data = new HashMap<>();
-        data.put("email", email);
-        data.put("password", password);
-        data.put("password-confirm", passwordConfirm);
-        data.put("locale", locale);
-        data.put("screenname", screenname);
-        HttpRequest request = HttpRequest.put(getUrl("/user/register")).header("server", SERVER).form(data);
+    public Long registerUser(String email, String password, String passwordConfirm, String locale, String screenname) throws NonUniqueEmailException, PasswordVerifyException, ServerException {
+        try {
+            Map<String, String> data = new HashMap<>();
+            data.put("email", email);
+            data.put("password", password);
+            data.put("password-confirm", passwordConfirm);
+            data.put("locale", locale);
+            data.put("screenname", screenname);
+            HttpRequest request = HttpRequest.put(getUrl("/user/register")).header("server", SERVER).form(data);
 //        int responseCode = request.code();
 //        System.out.println("Response code: " + responseCode);
-        String response = request.body();
+            String response = request.body();
 //        System.out.println(response);
-        JsonElement jelement = new JsonParser().parse(response);
-        JsonObject responseObject = jelement.getAsJsonObject();
-        if (responseObject.get("success").getAsBoolean()) {
-            return responseObject.get("user").getAsLong();
-        } else {
-            switch (responseObject.get("code").getAsInt()) {
-                case 450:
-                    throw new NonUniqueEmailException(responseObject.get("data").getAsString());
-                case 460:
-                    throw new PasswordVerifyException();
+            JsonElement jelement = new JsonParser().parse(response);
+            JsonObject responseObject = jelement.getAsJsonObject();
+            if (responseObject.get("success").getAsBoolean()) {
+                return responseObject.get("user").getAsLong();
+            } else {
+                switch (responseObject.get("code").getAsInt()) {
+                    case 450:
+                        throw new NonUniqueEmailException(responseObject.get("data").getAsString());
+                    case 460:
+                        throw new PasswordVerifyException();
+                }
+                return null;
             }
-            return null;
+        } catch (HttpRequest.HttpRequestException hre) {
+            LOG.error("Inter service error", hre);
+            throw new ServerException(hre);
         }
     }
 
