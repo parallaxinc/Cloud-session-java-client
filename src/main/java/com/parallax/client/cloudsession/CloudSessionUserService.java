@@ -30,7 +30,7 @@ public class CloudSessionUserService {
     public User getUser(String email) throws UnknownUserException {
         Map<String, String> data = new HashMap<>();
         data.put("email", email);
-        HttpRequest request = HttpRequest.get(getUrl("user/email/" + email));
+        HttpRequest request = HttpRequest.get(getUrl("/user/email/" + email));
 //        int responseCode = request.code();
 //        System.out.println("Response code: " + responseCode);
         String response = request.body();
@@ -51,7 +51,6 @@ public class CloudSessionUserService {
                 case 400:
                     throw new UnknownUserException(email, message);
             }
-            System.out.println(response);
             return null;
         }
     }
@@ -59,7 +58,7 @@ public class CloudSessionUserService {
     public User changeUserInfo(Long idUser, String screenname) throws UnknownUserIdException {
         Map<String, String> data = new HashMap<>();
         data.put("screenname", screenname);
-        HttpRequest request = HttpRequest.post(getUrl("user/info/" + idUser)).form(data);
+        HttpRequest request = HttpRequest.post(getUrl("/user/info/" + idUser)).form(data);
 //        int responseCode = request.code();
 //        System.out.println("Response code: " + responseCode);
         String response = request.body();
@@ -80,7 +79,6 @@ public class CloudSessionUserService {
                 case 400:
                     throw new UnknownUserIdException(idUser, message);
             }
-            System.out.println(response);
             return null;
         }
     }

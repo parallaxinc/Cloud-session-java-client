@@ -28,12 +28,12 @@ public class CloudSessionBucketService {
     }
 
     public boolean consumeOne(String type, Long id) throws UnknownUserIdException, UnknownBucketTypeException, InsufficientBucketTokensException, EmailNotConfirmedException, UserBlockedException {
-        HttpRequest request = HttpRequest.get(getUrl("bucket/consume/" + type + "/" + id));
+        HttpRequest request = HttpRequest.get(getUrl("/bucket/consume/" + type + "/" + id));
         return handleResponse(type, id, request);
     }
 
     public boolean consume(String type, Long id, int count) throws UnknownUserIdException, UnknownBucketTypeException, InsufficientBucketTokensException, EmailNotConfirmedException, UserBlockedException {
-        HttpRequest request = HttpRequest.get(getUrl("bucket/consume/" + type + "/" + id + "/" + count));
+        HttpRequest request = HttpRequest.get(getUrl("/bucket/consume/" + type + "/" + id + "/" + count));
         return handleResponse(type, id, request);
     }
 
@@ -65,7 +65,6 @@ public class CloudSessionBucketService {
                 case 480:
                     throw new UnknownBucketTypeException(type, message);
             }
-            System.out.println(response);
             return false;
         }
     }

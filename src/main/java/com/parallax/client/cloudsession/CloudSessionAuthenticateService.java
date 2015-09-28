@@ -32,7 +32,7 @@ public class CloudSessionAuthenticateService {
         Map<String, String> data = new HashMap<>();
         data.put("email", login);
         data.put("password", password);
-        String response = HttpRequest.post(getUrl("authenticate/local")).form(data).body();
+        String response = HttpRequest.post(getUrl("/authenticate/local")).form(data).body();
         JsonElement jelement = new JsonParser().parse(response);
         JsonObject responseObject = jelement.getAsJsonObject();
         if (responseObject.get("success").getAsBoolean()) {
@@ -56,7 +56,6 @@ public class CloudSessionAuthenticateService {
                 case 430:
                     throw new EmailNotConfirmedException(message);
             }
-            System.out.println(response);
             return null;
         }
     }

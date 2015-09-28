@@ -36,7 +36,7 @@ public class CloudSessionLocalUserService {
         data.put("token", token);
         data.put("password", password);
         data.put("password-confirm", passwordConfirm);
-        HttpRequest request = HttpRequest.post(getUrl("local/reset/" + email)).form(data);
+        HttpRequest request = HttpRequest.post(getUrl("/local/reset/" + email)).form(data);
 //        int responseCode = request.code();
 //        System.out.println("Response code: " + responseCode);
         String response = request.body();
@@ -57,7 +57,7 @@ public class CloudSessionLocalUserService {
     }
 
     public boolean requestPasswordReset(String email) throws UnknownUserException, InsufficientBucketTokensException {
-        HttpRequest request = HttpRequest.get(getUrl("local/reset/" + email)).header("server", SERVER);
+        HttpRequest request = HttpRequest.get(getUrl("/local/reset/" + email)).header("server", SERVER);
 //        int responseCode = request.code();
 //        System.out.println("Response code: " + responseCode);
         String response = request.body();
@@ -81,7 +81,7 @@ public class CloudSessionLocalUserService {
         Map<String, String> data = new HashMap<>();
         data.put("email", email);
         data.put("token", token);
-        HttpRequest request = HttpRequest.post(getUrl("local/confirm")).form(data);
+        HttpRequest request = HttpRequest.post(getUrl("/local/confirm")).form(data);
 //        int responseCode = request.code();
 //        System.out.println("Response code: " + responseCode);
         String response = request.body();
@@ -102,7 +102,7 @@ public class CloudSessionLocalUserService {
     }
 
     public boolean requestNewConfirmEmail(String email) throws UnknownUserException, InsufficientBucketTokensException, EmailAlreadyConfirmedException {
-        HttpRequest request = HttpRequest.get(getUrl("local/confirm/" + email)).header("server", SERVER);
+        HttpRequest request = HttpRequest.get(getUrl("/local/confirm/" + email)).header("server", SERVER);
 //        int responseCode = request.code();
 //        System.out.println("Response code: " + responseCode);
         String response = request.body();
@@ -133,7 +133,7 @@ public class CloudSessionLocalUserService {
         data.put("old-password", oldPassword);
         data.put("password", password);
         data.put("password-confirm", confirmPassword);
-        HttpRequest request = HttpRequest.post(getUrl("local/password/" + idUser)).form(data);
+        HttpRequest request = HttpRequest.post(getUrl("/local/password/" + idUser)).form(data);
 //        int responseCode = request.code();
 //        System.out.println("Response code: " + responseCode);
         String response = request.body();
