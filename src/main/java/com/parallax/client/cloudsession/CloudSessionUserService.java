@@ -97,6 +97,39 @@ public class CloudSessionUserService {
         }
     }
 
+    public User changeUserLocale(Long idUser, String locale) throws UnknownUserIdException, ServerException {
+        try {
+            Map<String, String> data = new HashMap<>();
+            data.put("locale", locale);
+            HttpRequest request = HttpRequest.post(getUrl("/user/locale/" + idUser)).form(data);
+//        int responseCode = request.code();
+//        System.out.println("Response code: " + responseCode);
+            String response = request.body();
+//        System.out.println(response);
+            JsonElement jelement = new JsonParser().parse(response);
+            JsonObject responseObject = jelement.getAsJsonObject();
+            if (responseObject.get("success").getAsBoolean()) {
+                JsonObject userJson = responseObject.get("user").getAsJsonObject();
+                User user = new User();
+                user.setId(userJson.get("id").getAsLong());
+                user.setEmail(userJson.get("email").getAsString());
+                user.setLocale(userJson.get("locale").getAsString());
+                user.setScreenname(userJson.get("screenname").getAsString());
+                return user;
+            } else {
+                String message = responseObject.get("message").getAsString();
+                switch (responseObject.get("code").getAsInt()) {
+                    case 400:
+                        throw new UnknownUserIdException(idUser, message);
+                }
+                return null;
+            }
+        } catch (HttpRequest.HttpRequestException hre) {
+            LOG.error("Inter service error", hre);
+            throw new ServerException(hre);
+        }
+    }
+
     private String getUrl(String actionUrl) {
         return BASE_URL + actionUrl;
     }
