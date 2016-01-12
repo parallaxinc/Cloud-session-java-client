@@ -25,13 +25,13 @@ import org.slf4j.LoggerFactory;
  *
  * @author Michel
  */
-public class CloudAuthenticationTokenService {
+public class CloudSessionAuthenticationTokenService {
 
-    private final Logger LOG = LoggerFactory.getLogger(CloudAuthenticationTokenService.class);
+    private final Logger LOG = LoggerFactory.getLogger(CloudSessionAuthenticationTokenService.class);
     private final String BASE_URL;
     private final String SERVER;
 
-    public CloudAuthenticationTokenService(String server, String baseUrl) {
+    public CloudSessionAuthenticationTokenService(String server, String baseUrl) {
         this.SERVER = server;
         this.BASE_URL = baseUrl;
     }
@@ -40,7 +40,7 @@ public class CloudAuthenticationTokenService {
         return BASE_URL + actionUrl;
     }
 
-    public String requestReset(Long idUser, String browser, String ipAddress) throws UnknownUserIdException, UserBlockedException, EmailNotConfirmedException, ServerException {
+    public String request(Long idUser, String browser, String ipAddress) throws UnknownUserIdException, UserBlockedException, EmailNotConfirmedException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
             data.put("idUser", String.valueOf(idUser));
