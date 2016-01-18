@@ -54,7 +54,7 @@ public class CloudSessionAuthenticationTokenService {
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
             if (responseObject.get("success").getAsBoolean()) {
-                return responseObject.get("toekn").getAsString();
+                return responseObject.get("token").getAsString();
             } else {
                 switch (responseObject.get("code").getAsInt()) {
                     case 400:
