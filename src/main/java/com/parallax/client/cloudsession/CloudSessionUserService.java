@@ -33,8 +33,6 @@ public class CloudSessionUserService {
 
     public User getUser(String email) throws UnknownUserException, ServerException {
         try {
-            Map<String, String> data = new HashMap<>();
-            data.put("email", email);
             HttpRequest request = HttpRequest.get(getUrl("/user/email/" + email));
 //        int responseCode = request.code();
 //        System.out.println("Response code: " + responseCode);
@@ -55,6 +53,36 @@ public class CloudSessionUserService {
                 switch (responseObject.get("code").getAsInt()) {
                     case 400:
                         throw new UnknownUserException(email, message);
+                }
+                return null;
+            }
+        } catch (HttpRequest.HttpRequestException hre) {
+            LOG.error("Inter service error", hre);
+            throw new ServerException(hre);
+        }
+    }
+
+    public User getUser(Long idUser) throws UnknownUserIdException, ServerException {
+        try {
+            HttpRequest request = HttpRequest.get(getUrl("/user/id/" + idUser));
+//        int responseCode = request.code();
+//        System.out.println("Response code: " + responseCode);
+            String response = request.body();
+//        System.out.println(response);
+            JsonElement jelement = new JsonParser().parse(response);
+            JsonObject responseObject = jelement.getAsJsonObject();
+            if (responseObject.get("success").getAsBoolean()) {
+                JsonObject userJson = responseObject.get("user").getAsJsonObject();
+                User user = new User();
+                user.setId(userJson.get("id").getAsLong());
+                user.setEmail(userJson.get("email").getAsString());
+                user.setLocale(userJson.get("locale").getAsString());
+                user.setScreenname(userJson.get("screenname").getAsString());
+                return user;
+            } else {
+                switch (responseObject.get("code").getAsInt()) {
+                    case 400:
+                        throw new UnknownUserIdException(idUser);
                 }
                 return null;
             }
