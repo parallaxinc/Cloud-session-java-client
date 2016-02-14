@@ -27,9 +27,12 @@ public class CloudSessionAuthenticateService {
 
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionAuthenticateService.class);
     private final String BASE_URL;
+    private final String SERVER;
 
-    public CloudSessionAuthenticateService(String baseUrl) {
+    public CloudSessionAuthenticateService(String server, String baseUrl) {
+        this.SERVER = server;
         this.BASE_URL = baseUrl;
+
     }
 
     public User authenticateLocalUser(String login, String password) throws UnknownUserException, UserBlockedException, EmailNotConfirmedException, ServerException {
@@ -37,7 +40,7 @@ public class CloudSessionAuthenticateService {
             Map<String, String> data = new HashMap<>();
             data.put("email", login);
             data.put("password", password);
-            HttpRequest httpRequest = HttpRequest.post(getUrl("/authenticate/local")).form(data);
+            HttpRequest httpRequest = HttpRequest.post(getUrl("/authenticate/local")).header("server", SERVER).form(data);
             String response = httpRequest.body();
 
             JsonElement jelement = new JsonParser().parse(response);
