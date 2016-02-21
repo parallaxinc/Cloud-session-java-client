@@ -9,6 +9,7 @@ import com.github.kevinsawicki.http.HttpRequest;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import com.parallax.client.cloudsession.exceptions.NonUniqueEmailException;
 import com.parallax.client.cloudsession.exceptions.PasswordVerifyException;
 import com.parallax.client.cloudsession.exceptions.ServerException;
@@ -61,6 +62,9 @@ public class CloudSessionRegisterService {
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
+        } catch (JsonSyntaxException jse) {
+            LOG.error("Json syntace service error", jse);
+            throw new ServerException(jse);
         }
     }
 
