@@ -10,6 +10,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import com.parallax.client.cloudsession.exceptions.EmailNotConfirmedException;
 import com.parallax.client.cloudsession.exceptions.ServerException;
 import com.parallax.client.cloudsession.exceptions.UnknownUserIdException;
@@ -69,6 +70,9 @@ public class CloudSessionAuthenticationTokenService {
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
+        } catch (JsonSyntaxException jse) {
+            LOG.error("Json syntace service error", jse);
+            throw new ServerException(jse);
         }
     }
 
@@ -94,6 +98,9 @@ public class CloudSessionAuthenticationTokenService {
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
+        } catch (JsonSyntaxException jse) {
+            LOG.error("Json syntace service error", jse);
+            throw new ServerException(jse);
         }
     }
 
@@ -117,6 +124,9 @@ public class CloudSessionAuthenticationTokenService {
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
+        } catch (JsonSyntaxException jse) {
+            LOG.error("Json syntace service error", jse);
+            throw new ServerException(jse);
         }
     }
 
