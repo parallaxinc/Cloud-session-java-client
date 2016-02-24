@@ -12,6 +12,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.parallax.client.cloudsession.exceptions.EmailAlreadyConfirmedException;
 import com.parallax.client.cloudsession.exceptions.InsufficientBucketTokensException;
+import com.parallax.client.cloudsession.exceptions.PasswordComplexityException;
 import com.parallax.client.cloudsession.exceptions.PasswordVerifyException;
 import com.parallax.client.cloudsession.exceptions.ServerException;
 import com.parallax.client.cloudsession.exceptions.UnknownUserException;
@@ -36,7 +37,7 @@ public class CloudSessionLocalUserService {
         this.BASE_URL = baseUrl;
     }
 
-    public boolean doPasswordReset(String token, String email, String password, String passwordConfirm) throws UnknownUserException, PasswordVerifyException, ServerException {
+    public boolean doPasswordReset(String token, String email, String password, String passwordConfirm) throws UnknownUserException, PasswordVerifyException, PasswordComplexityException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
             data.put("token", token);
@@ -57,6 +58,8 @@ public class CloudSessionLocalUserService {
                         throw new UnknownUserException(responseObject.get("data").getAsString());
                     case 460:
                         throw new PasswordVerifyException();
+                    case 490:
+                        throw new PasswordComplexityException();
                 }
                 return false;
             }
@@ -162,7 +165,7 @@ public class CloudSessionLocalUserService {
         return BASE_URL + actionUrl;
     }
 
-    public boolean changePassword(Long idUser, String oldPassword, String password, String confirmPassword) throws UnknownUserIdException, PasswordVerifyException, ServerException {
+    public boolean changePassword(Long idUser, String oldPassword, String password, String confirmPassword) throws UnknownUserIdException, PasswordVerifyException, PasswordComplexityException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
             data.put("old-password", oldPassword);
@@ -183,6 +186,8 @@ public class CloudSessionLocalUserService {
                         throw new UnknownUserIdException(responseObject.get("data").getAsString());
                     case 460:
                         throw new PasswordVerifyException();
+                    case 490:
+                        throw new PasswordComplexityException();
                     case 510:
                         return false;
                 }
