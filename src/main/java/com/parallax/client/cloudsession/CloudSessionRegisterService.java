@@ -13,6 +13,7 @@ import com.google.gson.JsonSyntaxException;
 import com.parallax.client.cloudsession.exceptions.NonUniqueEmailException;
 import com.parallax.client.cloudsession.exceptions.PasswordComplexityException;
 import com.parallax.client.cloudsession.exceptions.PasswordVerifyException;
+import com.parallax.client.cloudsession.exceptions.ScreennameUsedException;
 import com.parallax.client.cloudsession.exceptions.ServerException;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +35,7 @@ public class CloudSessionRegisterService {
         this.BASE_URL = baseUrl;
     }
 
-    public Long registerUser(String email, String password, String passwordConfirm, String locale, String screenname) throws NonUniqueEmailException, PasswordVerifyException, PasswordComplexityException, ServerException {
+    public Long registerUser(String email, String password, String passwordConfirm, String locale, String screenname) throws NonUniqueEmailException, PasswordVerifyException, PasswordComplexityException, ScreennameUsedException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
             data.put("email", email);
@@ -59,6 +60,8 @@ public class CloudSessionRegisterService {
                         throw new PasswordVerifyException();
                     case 490:
                         throw new PasswordComplexityException();
+                    case 500:
+                        throw new ScreennameUsedException(responseObject.get("data").getAsString());
                 }
                 return null;
             }

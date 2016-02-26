@@ -10,6 +10,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import com.parallax.client.cloudsession.exceptions.ScreennameUsedException;
 import com.parallax.client.cloudsession.exceptions.ServerException;
 import com.parallax.client.cloudsession.exceptions.UnknownUserException;
 import com.parallax.client.cloudsession.exceptions.UnknownUserIdException;
@@ -99,7 +100,7 @@ public class CloudSessionUserService {
         }
     }
 
-    public User changeUserInfo(Long idUser, String screenname) throws UnknownUserIdException, ServerException {
+    public User changeUserInfo(Long idUser, String screenname) throws UnknownUserIdException, ScreennameUsedException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
             data.put("screenname", screenname);
@@ -123,6 +124,8 @@ public class CloudSessionUserService {
                 switch (responseObject.get("code").getAsInt()) {
                     case 400:
                         throw new UnknownUserIdException(idUser, message);
+                    case 500:
+                        throw new ScreennameUsedException(responseObject.get("data").getAsString());
                 }
                 return null;
             }
