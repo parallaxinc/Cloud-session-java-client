@@ -61,12 +61,14 @@ public class CloudSessionAuthenticateService {
                         throw new UnknownUserException(login, message);
                     case 410:
                         // Wrong password
+                        LOG.info("Wrong password");
                         return null;
                     case 420:
                         throw new UserBlockedException(message);
                     case 430:
                         throw new EmailNotConfirmedException(message);
                 }
+                LOG.warn("Unexpected error: {}", response);
                 return null;
             }
         } catch (HttpRequest.HttpRequestException hre) {
