@@ -43,7 +43,7 @@ public class CloudSessionRegisterService {
             data.put("password-confirm", passwordConfirm);
             data.put("locale", locale);
             data.put("screenname", screenname);
-            HttpRequest request = HttpRequest.put(getUrl("/user/register")).header("server", SERVER).form(data);
+            HttpRequest request = HttpRequest.post(getUrl("/user/register")).header("server", SERVER).form(data);
 //        int responseCode = request.code();
 //        System.out.println("Response code: " + responseCode);
             String response = request.body();
