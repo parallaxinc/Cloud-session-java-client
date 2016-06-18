@@ -11,6 +11,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.parallax.client.cloudsession.exceptions.EmailNotConfirmedException;
+import com.parallax.client.cloudsession.exceptions.InsufficientBucketTokensException;
 import com.parallax.client.cloudsession.exceptions.ServerException;
 import com.parallax.client.cloudsession.exceptions.UnknownUserException;
 import com.parallax.client.cloudsession.exceptions.UserBlockedException;
@@ -36,7 +37,7 @@ public class CloudSessionAuthenticateService {
 
     }
 
-    public User authenticateLocalUser(String login, String password) throws UnknownUserException, UserBlockedException, EmailNotConfirmedException, ServerException {
+    public User authenticateLocalUser(String login, String password) throws UnknownUserException, UserBlockedException, EmailNotConfirmedException, InsufficientBucketTokensException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
             data.put("email", login);
@@ -67,6 +68,8 @@ public class CloudSessionAuthenticateService {
                         throw new UserBlockedException(message);
                     case 430:
                         throw new EmailNotConfirmedException(message);
+                    case 470:
+                        throw new InsufficientBucketTokensException();
                 }
                 LOG.warn("Unexpected error: {}", response);
                 return null;
