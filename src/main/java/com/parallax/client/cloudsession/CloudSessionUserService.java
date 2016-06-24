@@ -67,6 +67,40 @@ public class CloudSessionUserService {
         }
     }
 
+    public User getUserByScreenname(String screenname) throws UnknownUserException, ServerException {
+        try {
+            HttpRequest request = HttpRequest.get(getUrl("/user/screenname/" + screenname));
+//        int responseCode = request.code();
+//        System.out.println("Response code: " + responseCode);
+            String response = request.body();
+//        System.out.println(response);
+            JsonElement jelement = new JsonParser().parse(response);
+            JsonObject responseObject = jelement.getAsJsonObject();
+            if (responseObject.get("success").getAsBoolean()) {
+                JsonObject userJson = responseObject.get("user").getAsJsonObject();
+                User user = new User();
+                user.setId(userJson.get("id").getAsLong());
+                user.setEmail(userJson.get("email").getAsString());
+                user.setLocale(userJson.get("locale").getAsString());
+                user.setScreenname(userJson.get("screenname").getAsString());
+                return user;
+            } else {
+                String message = responseObject.get("message").getAsString();
+                switch (responseObject.get("code").getAsInt()) {
+                    case 400:
+                        throw new UnknownUserException(screenname, message);
+                }
+                return null;
+            }
+        } catch (HttpRequest.HttpRequestException hre) {
+            LOG.error("Inter service error", hre);
+            throw new ServerException(hre);
+        } catch (JsonSyntaxException jse) {
+            LOG.error("Json syntace service error", jse);
+            throw new ServerException(jse);
+        }
+    }
+
     public User getUser(Long idUser) throws UnknownUserIdException, ServerException {
         try {
             HttpRequest request = HttpRequest.get(getUrl("/user/id/" + idUser));
