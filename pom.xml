@@ -11,17 +11,6 @@
         <maven.compiler.target>1.7</maven.compiler.target>
     </properties>
 
-    <pluginRepositories>
-        <pluginRepository>
-            <id>Creating Future</id>
-            <name>plugins-releases</name>
-            <url>http://maven.creatingfuture.eu/browse/libs-release-local</url>
-        </pluginRepository>
-    </pluginRepositories>
-
-
-
-
     <dependencies>
         <!-- Testing -->
         <dependency>
