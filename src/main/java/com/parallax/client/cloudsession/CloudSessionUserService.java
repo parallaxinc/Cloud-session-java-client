@@ -49,6 +49,7 @@ public class CloudSessionUserService {
                 user.setEmail(userJson.get("email").getAsString());
                 user.setLocale(userJson.get("locale").getAsString());
                 user.setScreenname(userJson.get("screenname").getAsString());
+                user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
                 return user;
             } else {
                 String message = responseObject.get("message").getAsString();
@@ -83,6 +84,7 @@ public class CloudSessionUserService {
                 user.setEmail(userJson.get("email").getAsString());
                 user.setLocale(userJson.get("locale").getAsString());
                 user.setScreenname(userJson.get("screenname").getAsString());
+                user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
                 return user;
             } else {
                 String message = responseObject.get("message").getAsString();
@@ -117,6 +119,7 @@ public class CloudSessionUserService {
                 user.setEmail(userJson.get("email").getAsString());
                 user.setLocale(userJson.get("locale").getAsString());
                 user.setScreenname(userJson.get("screenname").getAsString());
+                user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
                 return user;
             } else {
                 switch (responseObject.get("code").getAsInt()) {
@@ -152,6 +155,7 @@ public class CloudSessionUserService {
                 user.setEmail(userJson.get("email").getAsString());
                 user.setLocale(userJson.get("locale").getAsString());
                 user.setScreenname(userJson.get("screenname").getAsString());
+                user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
                 return user;
             } else {
                 String message = responseObject.get("message").getAsString();
@@ -190,6 +194,7 @@ public class CloudSessionUserService {
                 user.setEmail(userJson.get("email").getAsString());
                 user.setLocale(userJson.get("locale").getAsString());
                 user.setScreenname(userJson.get("screenname").getAsString());
+                user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
                 return user;
             } else {
                 String message = responseObject.get("message").getAsString();
