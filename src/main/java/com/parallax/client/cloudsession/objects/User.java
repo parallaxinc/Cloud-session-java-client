@@ -17,14 +17,16 @@ public class User implements Serializable {
     private String email;
     private String locale;
     private String screenname;
+    private String authenticationSource;
 
     public User() {
     }
 
-    public User(Long id, String email, String locale) {
+    public User(Long id, String email, String locale, String authenticationSource) {
         this.id = id;
         this.email = email;
         this.locale = locale;
+        this.authenticationSource = authenticationSource;
     }
 
     public Long getId() {
@@ -57,6 +59,14 @@ public class User implements Serializable {
 
     public void setScreenname(String screenname) {
         this.screenname = screenname;
+    }
+
+    public String getAuthenticationSource() {
+        return authenticationSource;
+    }
+
+    public void setAuthenticationSource(String authenticationSource) {
+        this.authenticationSource = authenticationSource;
     }
 
 }

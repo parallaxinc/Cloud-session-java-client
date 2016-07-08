@@ -10,11 +10,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import com.parallax.client.cloudsession.exceptions.EmailNotConfirmedException;
-import com.parallax.client.cloudsession.exceptions.InsufficientBucketTokensException;
+import com.parallax.client.cloudsession.exceptions.NonUniqueEmailException;
+import com.parallax.client.cloudsession.exceptions.ScreennameUsedException;
 import com.parallax.client.cloudsession.exceptions.ServerException;
 import com.parallax.client.cloudsession.exceptions.UnknownUserException;
-import com.parallax.client.cloudsession.exceptions.UserBlockedException;
 import com.parallax.client.cloudsession.exceptions.WrongAuthenticationSourceException;
 import com.parallax.client.cloudsession.objects.User;
 import java.util.HashMap;
@@ -26,24 +25,24 @@ import org.slf4j.LoggerFactory;
  *
  * @author Michel
  */
-public class CloudSessionAuthenticateService {
+public class CloudSessionOAuthService {
 
-    private final Logger LOG = LoggerFactory.getLogger(CloudSessionAuthenticateService.class);
+    private final Logger LOG = LoggerFactory.getLogger(CloudSessionOAuthService.class);
     private final String BASE_URL;
     private final String SERVER;
 
-    public CloudSessionAuthenticateService(String server, String baseUrl) {
+    public CloudSessionOAuthService(String server, String baseUrl) {
         this.SERVER = server;
         this.BASE_URL = baseUrl;
 
     }
 
-    public User authenticateLocalUser(String login, String password) throws UnknownUserException, UserBlockedException, EmailNotConfirmedException, InsufficientBucketTokensException, WrongAuthenticationSourceException, ServerException {
+    public User validateUser(String login, String authenticationSource) throws UnknownUserException, WrongAuthenticationSourceException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
             data.put("email", login);
-            data.put("password", password);
-            HttpRequest httpRequest = HttpRequest.post(getUrl("/authenticate/local")).header("server", SERVER).form(data);
+            data.put("source", authenticationSource);
+            HttpRequest httpRequest = HttpRequest.post(getUrl("/oauth/validate")).header("server", SERVER).form(data);
             String response = httpRequest.body();
 
             JsonElement jelement = new JsonParser().parse(response);
@@ -61,21 +60,45 @@ public class CloudSessionAuthenticateService {
                 switch (responseObject.get("code").getAsInt()) {
                     case 400:
                         throw new UnknownUserException(login, message);
-                    case 410:
-                        // Wrong password
-                        LOG.info("Wrong password");
-                        return null;
-                    case 420:
-                        throw new UserBlockedException(message);
-                    case 430:
-                        throw new EmailNotConfirmedException(message);
-                    case 470:
-                        throw new InsufficientBucketTokensException();
                     case 480:
-                        String authenticationSource = responseObject.get("data").getAsString();
-                        throw new WrongAuthenticationSourceException(authenticationSource);
+                        String userAuthenticationSource = responseObject.get("data").getAsString();
+                        throw new WrongAuthenticationSourceException(userAuthenticationSource);
                 }
                 LOG.warn("Unexpected error: {}", response);
+                return null;
+            }
+        } catch (HttpRequest.HttpRequestException hre) {
+            LOG.error("Inter service error", hre);
+            throw new ServerException(hre);
+        } catch (JsonSyntaxException jse) {
+            LOG.error("Json syntace service error", jse);
+            throw new ServerException(jse);
+        }
+    }
+
+    public Long registerUser(String email, String authenticationSource, String locale, String screenname) throws NonUniqueEmailException, ScreennameUsedException, ServerException {
+        try {
+            Map<String, String> data = new HashMap<>();
+            data.put("email", email);
+            data.put("source", authenticationSource);
+            data.put("locale", locale);
+            data.put("screenname", screenname);
+            HttpRequest request = HttpRequest.post(getUrl("/oauth/create")).header("server", SERVER).form(data);
+//        int responseCode = request.code();
+//        System.out.println("Response code: " + responseCode);
+            String response = request.body();
+//        System.out.println(response);
+            JsonElement jelement = new JsonParser().parse(response);
+            JsonObject responseObject = jelement.getAsJsonObject();
+            if (responseObject.get("success").getAsBoolean()) {
+                return responseObject.get("user").getAsLong();
+            } else {
+                switch (responseObject.get("code").getAsInt()) {
+                    case 450:
+                        throw new NonUniqueEmailException(responseObject.get("data").getAsString());
+                    case 500:
+                        throw new ScreennameUsedException(responseObject.get("data").getAsString());
+                }
                 return null;
             }
         } catch (HttpRequest.HttpRequestException hre) {
