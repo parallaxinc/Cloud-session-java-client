@@ -35,14 +35,29 @@ public class CloudSessionRegisterService {
         this.BASE_URL = baseUrl;
     }
 
-    public Long registerUser(String email, String password, String passwordConfirm, String locale, String screenname) throws NonUniqueEmailException, PasswordVerifyException, PasswordComplexityException, ScreennameUsedException, ServerException {
+    public Long registerUser(
+            String email, String password, String passwordConfirm, 
+            String locale, String screenname, String birthMonth, String birthYear,
+            String proxyEmail, String proxyEmailType)
+            throws NonUniqueEmailException,
+                   PasswordVerifyException, 
+                   PasswordComplexityException, 
+                   ScreennameUsedException, 
+                   ServerException {
+
         try {
             Map<String, String> data = new HashMap<>();
+            
             data.put("email", email);
             data.put("password", password);
             data.put("password-confirm", passwordConfirm);
             data.put("locale", locale);
             data.put("screenname", screenname);
+            data.put("birthmonth", birthMonth);
+            data.put("birthyear", birthYear);
+            data.put("proxyemail", proxyEmail);
+            data.put("proxyemailtype", proxyEmailType);
+            
             HttpRequest request = HttpRequest.post(getUrl("/user/register")).header("server", SERVER).form(data);
 //        int responseCode = request.code();
 //        System.out.println("Response code: " + responseCode);
@@ -69,7 +84,7 @@ public class CloudSessionRegisterService {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax service error", jse);
             throw new ServerException(jse);
         }
     }
