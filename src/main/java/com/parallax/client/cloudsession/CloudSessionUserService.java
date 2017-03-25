@@ -29,19 +29,28 @@ public class CloudSessionUserService {
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionUserService.class);
     private final String BASE_URL;
 
+    /**
+     *
+     * @param baseUrl
+     */
     public CloudSessionUserService(String baseUrl) {
         this.BASE_URL = baseUrl;
     }
 
+    /**
+     *
+     * @param email
+     * @return
+     * @throws UnknownUserException
+     * @throws ServerException
+     */
     public User getUser(String email) throws UnknownUserException, ServerException {
         try {
             HttpRequest request = HttpRequest.get(getUrl("/user/email/" + email));
-//        int responseCode = request.code();
-//        System.out.println("Response code: " + responseCode);
             String response = request.body();
-//        System.out.println(response);
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
+
             if (responseObject.get("success").getAsBoolean()) {
                 JsonObject userJson = responseObject.get("user").getAsJsonObject();
                 User user = new User();
@@ -68,6 +77,13 @@ public class CloudSessionUserService {
         }
     }
 
+    /**
+     *
+     * @param screenname
+     * @return
+     * @throws UnknownUserException
+     * @throws ServerException
+     */
     public User getUserByScreenname(String screenname) throws UnknownUserException, ServerException {
         try {
             HttpRequest request = HttpRequest.get(getUrl("/user/screenname/" + screenname));
@@ -103,6 +119,13 @@ public class CloudSessionUserService {
         }
     }
 
+    /**
+     *
+     * @param idUser
+     * @return
+     * @throws UnknownUserIdException
+     * @throws ServerException
+     */
     public User getUser(Long idUser) throws UnknownUserIdException, ServerException {
         try {
             HttpRequest request = HttpRequest.get(getUrl("/user/id/" + idUser));
@@ -137,6 +160,15 @@ public class CloudSessionUserService {
         }
     }
 
+    /**
+     *
+     * @param idUser
+     * @param screenname
+     * @return
+     * @throws UnknownUserIdException
+     * @throws ScreennameUsedException
+     * @throws ServerException
+     */
     public User changeUserInfo(Long idUser, String screenname) throws UnknownUserIdException, ScreennameUsedException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
@@ -176,6 +208,14 @@ public class CloudSessionUserService {
         }
     }
 
+    /**
+     *
+     * @param idUser
+     * @param locale
+     * @return
+     * @throws UnknownUserIdException
+     * @throws ServerException
+     */
     public User changeUserLocale(Long idUser, String locale) throws UnknownUserIdException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
