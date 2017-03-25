@@ -33,11 +33,29 @@ public class CloudSessionLocalUserService {
     private final String BASE_URL;
     private final String SERVER;
 
+    /**
+     *
+     * @param server
+     * @param baseUrl
+     */
     public CloudSessionLocalUserService(String server, String baseUrl) {
         this.SERVER = server;
         this.BASE_URL = baseUrl;
     }
 
+    /**
+     *
+     * @param token
+     * @param email
+     * @param password
+     * @param passwordConfirm
+     * @return
+     * @throws UnknownUserException
+     * @throws PasswordVerifyException
+     * @throws PasswordComplexityException
+     * @throws WrongAuthenticationSourceException
+     * @throws ServerException
+     */
     public boolean doPasswordReset(String token, String email, String password, String passwordConfirm) throws UnknownUserException, PasswordVerifyException, PasswordComplexityException, WrongAuthenticationSourceException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
@@ -75,6 +93,15 @@ public class CloudSessionLocalUserService {
         }
     }
 
+    /**
+     *
+     * @param email
+     * @return
+     * @throws UnknownUserException
+     * @throws InsufficientBucketTokensException
+     * @throws WrongAuthenticationSourceException
+     * @throws ServerException
+     */
     public boolean requestPasswordReset(String email) throws UnknownUserException, InsufficientBucketTokensException, WrongAuthenticationSourceException, ServerException {
         try {
             HttpRequest request = HttpRequest.get(getUrl("/local/reset/" + email)).header("server", SERVER);
@@ -106,6 +133,15 @@ public class CloudSessionLocalUserService {
         }
     }
 
+    /**
+     *
+     * @param email
+     * @param token
+     * @return
+     * @throws UnknownUserException
+     * @throws WrongAuthenticationSourceException
+     * @throws ServerException
+     */
     public boolean doConfirm(String email, String token) throws UnknownUserException, WrongAuthenticationSourceException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
@@ -140,6 +176,16 @@ public class CloudSessionLocalUserService {
         }
     }
 
+    /**
+     *
+     * @param email
+     * @return
+     * @throws UnknownUserException
+     * @throws InsufficientBucketTokensException
+     * @throws EmailAlreadyConfirmedException
+     * @throws WrongAuthenticationSourceException
+     * @throws ServerException
+     */
     public boolean requestNewConfirmEmail(String email) throws UnknownUserException, InsufficientBucketTokensException, EmailAlreadyConfirmedException, WrongAuthenticationSourceException, ServerException {
         try {
             HttpRequest request = HttpRequest.get(getUrl("/local/confirm/" + email)).header("server", SERVER);
@@ -174,6 +220,19 @@ public class CloudSessionLocalUserService {
         return BASE_URL + actionUrl;
     }
 
+    /**
+     *
+     * @param idUser
+     * @param oldPassword
+     * @param password
+     * @param confirmPassword
+     * @return
+     * @throws UnknownUserIdException
+     * @throws PasswordVerifyException
+     * @throws PasswordComplexityException
+     * @throws WrongAuthenticationSourceException
+     * @throws ServerException
+     */
     public boolean changePassword(Long idUser, String oldPassword, String password, String confirmPassword) throws UnknownUserIdException, PasswordVerifyException, PasswordComplexityException, WrongAuthenticationSourceException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();

@@ -21,20 +21,49 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Register a local user account
  *
  * @author Michel
  */
 public class CloudSessionRegisterService {
 
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionRegisterService.class);
+
+    /**
+     * Base URL use to obtain authentication service.
+     */
     private final String BASE_URL;
+    
+    /**
+     * Host name
+     */
     private final String SERVER;
 
+    /**
+     * Constructor
+     * 
+     * @param server
+     * @param baseUrl 
+     */
     public CloudSessionRegisterService(String server, String baseUrl) {
         this.SERVER = server;
         this.BASE_URL = baseUrl;
     }
 
+    /**
+     *
+     * @param email
+     * @param password
+     * @param passwordConfirm
+     * @param locale
+     * @param screenname
+     * @return
+     * @throws NonUniqueEmailException
+     * @throws PasswordVerifyException
+     * @throws PasswordComplexityException
+     * @throws ScreennameUsedException
+     * @throws ServerException
+     */
     public Long registerUser(String email, String password, String passwordConfirm, String locale, String screenname) throws NonUniqueEmailException, PasswordVerifyException, PasswordComplexityException, ScreennameUsedException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();

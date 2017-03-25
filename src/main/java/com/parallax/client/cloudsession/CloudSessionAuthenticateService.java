@@ -23,32 +23,84 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
+ * Authenticate user login
+ * <p>
+ * Provides an interface to the Could-Session server for user authentication
+ * services. The methods in this class use custom exceptions to indicate 
+ * a situation where a program fault has been detected.
+ * 
  * @author Michel
+ * 
  */
 public class CloudSessionAuthenticateService {
 
+    /**
+     * Handle for any logging activity
+     */
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionAuthenticateService.class);
+    
+    /**
+     * Base URL use to obtain authentication service.
+     */
     private final String BASE_URL;
+    
+    /**
+     * Host name
+     */
     private final String SERVER;
 
+    /**
+     * Class constructor
+     * 
+     * @param server
+     * @param baseUrl
+     */
     public CloudSessionAuthenticateService(String server, String baseUrl) {
         this.SERVER = server;
         this.BASE_URL = baseUrl;
 
     }
 
-    public User authenticateLocalUser(String login, String password) throws UnknownUserException, UserBlockedException, EmailNotConfirmedException, InsufficientBucketTokensException, WrongAuthenticationSourceException, ServerException {
+    /**
+     * Authenticate user from local authentication database
+     * 
+     * @param login
+     * @param password
+     * @return
+     * @throws UnknownUserException
+     * @throws UserBlockedException
+     * @throws EmailNotConfirmedException
+     * @throws InsufficientBucketTokensException
+     * @throws WrongAuthenticationSourceException
+     * @throws ServerException
+     */
+    public User authenticateLocalUser(String login, String password) 
+            throws
+                UnknownUserException, 
+                UserBlockedException, 
+                EmailNotConfirmedException, 
+                InsufficientBucketTokensException, 
+                WrongAuthenticationSourceException, 
+                ServerException {
+        
         try {
             Map<String, String> data = new HashMap<>();
             data.put("email", login);
             data.put("password", password);
-            HttpRequest httpRequest = HttpRequest.post(getUrl("/authenticate/local")).header("server", SERVER).form(data);
-            String response = httpRequest.body();
 
+            // Issue POST request to attempt login
+            HttpRequest httpRequest = HttpRequest
+                    .post(getUrl("/authenticate/local"))
+                    .header("server", SERVER)
+                    .form(data);
+
+            // Convert response from login attempt
+            String response = httpRequest.body();
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
+
             if (responseObject.get("success").getAsBoolean()) {
+                // Create and return a user object
                 JsonObject userJson = responseObject.get("user").getAsJsonObject();
                 User user = new User();
                 user.setId(userJson.get("id").getAsLong());
@@ -57,14 +109,16 @@ public class CloudSessionAuthenticateService {
                 user.setScreenname(userJson.get("screenname").getAsString());
                 return user;
             } else {
+                // Authentication failed. Obtain result code
                 String message = responseObject.get("message").getAsString();
                 switch (responseObject.get("code").getAsInt()) {
                     case 400:
                         throw new UnknownUserException(login, message);
                     case 410:
-                        // Wrong password
+                        // Wrong password, but we should report it as an
+                        // unknow username OR password to increase ambiguity
                         LOG.info("Wrong password");
-                        return null;
+                        throw new UnknownUserException(login, message);
                     case 420:
                         throw new UserBlockedException(message);
                     case 430:
@@ -87,8 +141,13 @@ public class CloudSessionAuthenticateService {
         }
     }
 
+    /**
+     * Prepend the base url to the action url
+     * 
+     * @param actionUrl
+     * @return 
+     */
     private String getUrl(String actionUrl) {
         return BASE_URL + actionUrl;
     }
-
 }

@@ -6,13 +6,17 @@
 package com.parallax.client.cloudsession.exceptions;
 
 /**
- *
+ * The two copies of the password provided during registration are not the same
+ * <p>
  * @author Michel
  */
 public class PasswordVerifyException extends Exception {
 
     private static final String DEFAULT_MESSAGE = "Password confirm doesn't match";
 
+    /**
+     * Exception with default message
+     */
     public PasswordVerifyException() {
         super(DEFAULT_MESSAGE);
     }
