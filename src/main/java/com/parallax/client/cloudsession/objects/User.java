@@ -18,6 +18,12 @@ public class User implements Serializable {
     private String locale;
     private String screenname;
     private String authenticationSource;
+    private Boolean blocked;
+    private Boolean confirmed;
+    private String coachEmail;
+    private int birthMonth;
+    private int birthYear;
+    private int coachEmailSource;
     
     private int error;
     private String errorMessage;
@@ -36,15 +42,25 @@ public class User implements Serializable {
      * @param locale User language
      * @param authenticationSource Authentication provider
      */
-    public User(Long id, String email, String locale, String authenticationSource) {
+    public User(
+            Long id, String email, String locale, String authenticationSource,
+            int birthMonth, int birthYear, String parentEmail,
+            int parentEmailSource) {
+        
         this.id = id;
         this.email = email;
         this.locale = locale;
         this.authenticationSource = authenticationSource;
+        this.blocked = false;
+        this.confirmed = false;
+        this.birthMonth = 0;
+        this.birthYear = 0;
+        this.coachEmail = "";
+        this.coachEmailSource = 0;
         this.error = 0;
         this.errorMessage = "";
     }
-
+    
     /**
      *
      * @return
@@ -125,6 +141,102 @@ public class User implements Serializable {
         this.authenticationSource = authenticationSource;
     }
 
+    /**
+     * 
+     * @return 
+     */
+    public Boolean getBlockled() {
+        return blocked;
+    }
+
+    /**
+     * 
+     * @param state 
+     */
+    public void setBlockled(Boolean state) {
+        this.blocked = state;
+    }
+    
+    /**
+     * 
+     * @return 
+     */
+    public Boolean getConfirmed() {
+        return confirmed;
+    }
+    
+    /**
+     * 
+     * @param state 
+     */
+    public void setConfirmed(Boolean state) {
+        this.confirmed = state;
+    }
+    
+    /**
+     * 
+     * @return 
+     */
+    public int getBirthMonth() {
+        return this.birthMonth;
+    }
+    
+    /**
+     * 
+     * @param month 
+     */
+    public void setBirthMonth( int month) {
+        this.birthMonth = month;
+    }
+    
+    /**
+     * 
+     * @return 
+     */
+    public int getBirthYear() {
+        return this.birthYear;
+    }
+    
+    /**
+     * 
+     * @param year 
+     */
+    public void setBirthYear( int year) {
+        this.birthYear = year;
+    }
+    
+    /**
+     * 
+     * @return 
+     */
+    public String getCoachEmail() {
+        return this.coachEmail;
+    }
+    
+    /**
+     * 
+     * @param email 
+     */
+    public void setCoachEmail( String email) {
+        this.coachEmail = email;
+    }
+    
+    /**
+     * 
+     * @return 
+     */
+    public int getCoachEmailSource() {
+        return coachEmailSource;
+    }
+    
+    /**
+     * 
+     * @param source 
+     */
+    public void setCoachEmailSource(int source) {
+        coachEmailSource = source;
+    }
+    
     /**
      * 
      * @return 
