@@ -6,6 +6,7 @@
 package com.parallax.client.cloudsession.objects;
 
 import java.io.Serializable;
+import java.util.Calendar;
 
 /**
  *
@@ -268,4 +269,26 @@ public class User implements Serializable {
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
     }
+    
+    public boolean isCoppaEligible() {
+        return this.isCoppaEligible(this.birthMonth, this.birthYear);
+    }
+    
+    // Return true if the user is less than 13 years old
+    public boolean isCoppaEligible(int month, int year) {
+        // 156 months is equivelent to 13 years
+        int cap = 156;
+        
+        // Calculate the user's age as a number of months since 0 AD
+        int user_age = (year * 12) + month;
+        
+        // Calculate the current number of months since 0 AD
+        int current_month = Calendar.getInstance().get(Calendar.MONTH);
+        int current_year = Calendar.getInstance().get(Calendar.YEAR);
+        int current_cap = (current_year * 12) + current_month;
+        
+        // If the difference is at or under the cap, COPPA rules apply
+        return (current_cap - user_age) <= cap;
+    }
+
 }
