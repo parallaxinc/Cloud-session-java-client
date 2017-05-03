@@ -275,6 +275,9 @@ public class CloudSessionLocalUserService {
                     case 520:
                         throw new EmailAlreadyConfirmedException(
                                 responseObject.get("message").getAsString());
+                    case 540:
+                        throw new ServerException (
+                                responseObject.get("message").getAsString());
                 }
                 return false;
             }
