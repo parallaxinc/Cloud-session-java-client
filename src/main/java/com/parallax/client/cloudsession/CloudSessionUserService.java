@@ -17,6 +17,7 @@ import com.parallax.client.cloudsession.exceptions.UnknownUserIdException;
 import com.parallax.client.cloudsession.objects.User;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,14 @@ import org.slf4j.LoggerFactory;
  */
 public class CloudSessionUserService {
 
+    /**
+     * 
+     */
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionUserService.class);
+    
+    /**
+     * 
+     */
     private final String BASE_URL;
 
     /**
@@ -70,19 +78,7 @@ public class CloudSessionUserService {
 
             if (responseObject.get("success").getAsBoolean()) {
                 JsonObject userJson = responseObject.get("user").getAsJsonObject();
-                User user = new User();
-                
-                user.setId(userJson.get("id").getAsLong());
-                user.setEmail(userJson.get("email").getAsString());
-                user.setLocale(userJson.get("locale").getAsString());
-                user.setScreenname(userJson.get("screenname").getAsString());
-                user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
-                user.setBirthMonth(userJson.get("bdmonth").getAsInt());
-                user.setBirthYear(userJson.get("bdyear").getAsInt());
-                user.setCoachEmail(userJson.get("parent-email").getAsString());
-                user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
-
-                return user;
+                return populateUser(userJson);
             } else {
                 String message = responseObject.get("message").getAsString();
                 switch (responseObject.get("code").getAsInt()) {
@@ -119,19 +115,7 @@ public class CloudSessionUserService {
             JsonObject responseObject = jelement.getAsJsonObject();
             if (responseObject.get("success").getAsBoolean()) {
                 JsonObject userJson = responseObject.get("user").getAsJsonObject();
-                User user = new User();
-                
-                user.setId(userJson.get("id").getAsLong());
-                user.setEmail(userJson.get("email").getAsString());
-                user.setLocale(userJson.get("locale").getAsString());
-                user.setScreenname(userJson.get("screenname").getAsString());
-                user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
-                user.setBirthMonth(userJson.get("bdmonth").getAsInt());
-                user.setBirthYear(userJson.get("bdyear").getAsInt());
-                user.setCoachEmail(userJson.get("parent-email").getAsString());
-                user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
-
-                return user;
+                return populateUser(userJson);
             } else {
                 String message = responseObject.get("message").getAsString();
                 switch (responseObject.get("code").getAsInt()) {
@@ -160,27 +144,12 @@ public class CloudSessionUserService {
     public User getUser(Long idUser) throws UnknownUserIdException, ServerException {
         try {
             HttpRequest request = HttpRequest.get(getUrl("/user/id/" + idUser));
-//        int responseCode = request.code();
-//        System.out.println("Response code: " + responseCode);
             String response = request.body();
-//        System.out.println(response);
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
             if (responseObject.get("success").getAsBoolean()) {
                 JsonObject userJson = responseObject.get("user").getAsJsonObject();
-                User user = new User();
-                
-                user.setId(userJson.get("id").getAsLong());
-                user.setEmail(userJson.get("email").getAsString());
-                user.setLocale(userJson.get("locale").getAsString());
-                user.setScreenname(userJson.get("screenname").getAsString());
-                user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
-                user.setBirthMonth(userJson.get("bdmonth").getAsInt());
-                user.setBirthYear(userJson.get("bdyear").getAsInt());
-                user.setCoachEmail(userJson.get("parent-email").getAsString());
-                user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
-
-                return user;
+                return populateUser(userJson);
             } else {
                 switch (responseObject.get("code").getAsInt()) {
                     case 400:
@@ -222,19 +191,7 @@ public class CloudSessionUserService {
             JsonObject responseObject = jelement.getAsJsonObject();
             if (responseObject.get("success").getAsBoolean()) {
                 JsonObject userJson = responseObject.get("user").getAsJsonObject();
-                User user = new User();
-                
-                user.setId(userJson.get("id").getAsLong());
-                user.setEmail(userJson.get("email").getAsString());
-                user.setLocale(userJson.get("locale").getAsString());
-                user.setScreenname(userJson.get("screenname").getAsString());
-                user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
-                user.setBirthMonth(userJson.get("bdmonth").getAsInt());
-                user.setBirthYear(userJson.get("bdyear").getAsInt());
-                user.setCoachEmail(userJson.get("parent-email").getAsString());
-                user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
-
-                return user;
+                return populateUser(userJson);
             } else {
                 String message = responseObject.get("message").getAsString();
                 switch (responseObject.get("code").getAsInt()) {
@@ -267,28 +224,16 @@ public class CloudSessionUserService {
         try {
             Map<String, String> data = new HashMap<>();
             data.put("locale", locale);
+
             HttpRequest request = HttpRequest.post(getUrl("/user/locale/" + idUser)).form(data);
-//        int responseCode = request.code();
-//        System.out.println("Response code: " + responseCode);
             String response = request.body();
-//        System.out.println(response);
+
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
+
             if (responseObject.get("success").getAsBoolean()) {
                 JsonObject userJson = responseObject.get("user").getAsJsonObject();
-                User user = new User();
-                
-                user.setId(userJson.get("id").getAsLong());
-                user.setEmail(userJson.get("email").getAsString());
-                user.setLocale(userJson.get("locale").getAsString());
-                user.setScreenname(userJson.get("screenname").getAsString());
-                user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
-                user.setBirthMonth(userJson.get("bdmonth").getAsInt());
-                user.setBirthYear(userJson.get("bdyear").getAsInt());
-                user.setCoachEmail(userJson.get("parent-email").getAsString());
-                user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
-
-                return user;
+                return populateUser(userJson);
             } else {
                 String message = responseObject.get("message").getAsString();
                 switch (responseObject.get("code").getAsInt()) {
@@ -310,4 +255,30 @@ public class CloudSessionUserService {
         return BASE_URL + actionUrl;
     }
 
+    private User populateUser(JsonObject userJson) {
+        
+        User user = new User();
+        
+        user.setId(userJson.get("id").getAsLong());
+        user.setEmail(userJson.get("email").getAsString());
+        user.setLocale(userJson.get("locale").getAsString());
+        user.setScreenname(userJson.get("screenname").getAsString());
+        user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
+        
+        // COPPA update
+        user.setBirthMonth(userJson.get("bdmonth").getAsInt());
+        user.setBirthYear(userJson.get("bdyear").getAsInt());
+                
+        if (userJson.get("parent-email").isJsonNull()) {
+            user.setCoachEmail("");
+        }
+        else {
+            user.setCoachEmail(userJson.get("parent-email").getAsString());
+        }
+                
+        user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
+                
+        return user;
+    }
+    
 }

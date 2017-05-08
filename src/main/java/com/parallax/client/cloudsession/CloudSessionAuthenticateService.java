@@ -84,6 +84,8 @@ public class CloudSessionAuthenticateService {
                 WrongAuthenticationSourceException, 
                 ServerException {
         
+        LOG.debug("Attempting to authenticate user: {}", login);
+
         try {
             Map<String, String> data = new HashMap<>();
             data.put("email", login);
@@ -97,6 +99,9 @@ public class CloudSessionAuthenticateService {
 
             // Convert response from login attempt
             String response = httpRequest.body();
+            
+            LOG.debug("Received a response: {}", response);
+            
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
 
@@ -110,9 +115,18 @@ public class CloudSessionAuthenticateService {
                 user.setLocale(userJson.get("locale").getAsString());
                 user.setScreenname(userJson.get("screenname").getAsString());
                 user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
+                
+                // These dates might be zero for grandfathered accounts
                 user.setBirthMonth(userJson.get("bdmonth").getAsInt());
                 user.setBirthYear(userJson.get("bdyear").getAsInt());
-                user.setCoachEmail(userJson.get("parent-email").getAsString());
+                
+                // This gets stored as a Null if the sponsor address is not supplied
+                if (userJson.get("parent-email").isJsonNull()) {
+                    user.setCoachEmail("");
+                }
+                else {
+                    user.setCoachEmail(userJson.get("parent-email").getAsString());
+                }
                 user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
 
                 return user;

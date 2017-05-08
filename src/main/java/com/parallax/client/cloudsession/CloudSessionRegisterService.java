@@ -54,6 +54,7 @@ public class CloudSessionRegisterService {
     }
 
     /**
+     * Create a new user account
      * 
      * @param email
      * @param password
@@ -100,11 +101,13 @@ public class CloudSessionRegisterService {
             data.put("parent-email", coachEmail);
             data.put("parent-email-source", Integer.toString(coachEmailSource));
             
+            // Post the new user request to the cloud session server REST API
             HttpRequest request = HttpRequest
                     .post(getUrl("/user/register"))
                     .header("server", SERVER)
                     .form(data);
             
+            // Response from the Cloud Session server
             String response = request.body();
             
             JsonElement jelement = new JsonParser().parse(response);
