@@ -37,10 +37,14 @@ public class CloudSessionBucketService {
     }
 
     /**
-     *
-     * @param type
-     * @param id
-     * @return
+     *  Inform the Cloud Session service to decrement the token count for
+     *  the specified 'type' of token
+     * 
+     * @param type token type
+     * @param id user ID
+     * 
+     * @return  true if successful or raise an exception if unsuccessful
+     * 
      * @throws UnknownUserIdException
      * @throws UnknownBucketTypeException
      * @throws InsufficientBucketTokensException
@@ -48,17 +52,28 @@ public class CloudSessionBucketService {
      * @throws UserBlockedException
      * @throws ServerException
      */
-    public boolean consumeOne(String type, Long id) throws UnknownUserIdException, UnknownBucketTypeException, InsufficientBucketTokensException, EmailNotConfirmedException, UserBlockedException, ServerException {
+    public boolean consumeOne(String type, Long id) throws 
+            UnknownUserIdException, 
+            UnknownBucketTypeException, 
+            InsufficientBucketTokensException, 
+            EmailNotConfirmedException, 
+            UserBlockedException, 
+            ServerException {
+        
         HttpRequest request = HttpRequest.get(getUrl("/bucket/consume/" + type + "/" + id));
         return handleResponse(type, id, request);
     }
 
     /**
+     *  Inform the Cloud Session service to decrement the token count by
+     * 'count' tokens for the specified 'type' of token 
      *
-     * @param type
-     * @param id
-     * @param count
-     * @return
+     * @param type token type
+     * @param id user ID
+     * @param count number of tokens to remove from the queue
+     * 
+     * @return true if successful or raise an exception if unsuccessful
+     * 
      * @throws UnknownUserIdException
      * @throws UnknownBucketTypeException
      * @throws InsufficientBucketTokensException
@@ -66,7 +81,14 @@ public class CloudSessionBucketService {
      * @throws UserBlockedException
      * @throws ServerException
      */
-    public boolean consume(String type, Long id, int count) throws UnknownUserIdException, UnknownBucketTypeException, InsufficientBucketTokensException, EmailNotConfirmedException, UserBlockedException, ServerException {
+    public boolean consume(String type, Long id, int count) throws
+            UnknownUserIdException, 
+            UnknownBucketTypeException, 
+            InsufficientBucketTokensException, 
+            EmailNotConfirmedException, 
+            UserBlockedException, 
+            ServerException {
+        
         HttpRequest request = HttpRequest.get(getUrl("/bucket/consume/" + type + "/" + id + "/" + count));
         return handleResponse(type, id, request);
     }
@@ -88,14 +110,20 @@ public class CloudSessionBucketService {
      * @throws UserBlockedException
      * @throws ServerException
      */
-    protected boolean handleResponse(String type, Long id, HttpRequest request) throws UnknownUserIdException, UnknownBucketTypeException, InsufficientBucketTokensException, EmailNotConfirmedException, UserBlockedException, ServerException {
+    protected boolean handleResponse(String type, Long id, HttpRequest request) throws
+            UnknownUserIdException, 
+            UnknownBucketTypeException, 
+            InsufficientBucketTokensException, 
+            EmailNotConfirmedException, 
+            UserBlockedException, 
+            ServerException {
+        
         try {
-            //        int responseCode = request.code();
-//        System.out.println("Response code: " + responseCode);
             String response = request.body();
-//        System.out.println(response);
+
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
+
             if (responseObject.get("success").getAsBoolean()) {
                 return true;
             } else {
@@ -108,6 +136,7 @@ public class CloudSessionBucketService {
                     case 430:
                         throw new EmailNotConfirmedException(message);
                     case 470:
+                        // Rate exceeded - no tokens are left in the bucket
                         String nextTime = responseObject.get("data").getAsString();
                         throw new InsufficientBucketTokensException(message, nextTime);
                     case 480:

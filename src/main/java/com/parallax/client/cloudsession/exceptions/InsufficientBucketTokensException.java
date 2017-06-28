@@ -53,7 +53,8 @@ public class InsufficientBucketTokensException extends Exception {
     }
 
     /**
-     *
+     * Getter method for nextTime
+     * 
      * @return
      */
     public Date getNextTime() {
@@ -61,7 +62,7 @@ public class InsufficientBucketTokensException extends Exception {
     }
 
     /**
-     *
+     * Setter Method for nextTime
      * @param nextTime
      */
     public void setNextTime(Date nextTime) {
