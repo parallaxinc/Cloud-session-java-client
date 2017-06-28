@@ -138,6 +138,8 @@ public class CloudSessionBucketService {
                     case 470:
                         // Rate exceeded - no tokens are left in the bucket
                         String nextTime = responseObject.get("data").getAsString();
+                        LOG.info("Compile bucket empty. Time to next token is:", nextTime);
+                        
                         throw new InsufficientBucketTokensException(message, nextTime);
                     case 480:
                         throw new UnknownBucketTypeException(type, message);
