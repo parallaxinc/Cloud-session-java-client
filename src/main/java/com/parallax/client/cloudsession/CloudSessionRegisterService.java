@@ -21,12 +21,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Register a local user account
+ * Local user account registration services
  *
  * @author Michel
  */
 public class CloudSessionRegisterService {
 
+    /**
+     *  System logger 
+     */
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionRegisterService.class);
 
     /**
@@ -40,10 +43,10 @@ public class CloudSessionRegisterService {
     private final String SERVER;
 
     /**
-     * Constructor
      * 
-     * @param server
-     * @param baseUrl 
+     * 
+     * @param server The cloud session host name
+     * @param baseUrl The cloud session URL as defined in the 
      */
     public CloudSessionRegisterService(String server, String baseUrl) {
         this.SERVER = server;
@@ -51,60 +54,93 @@ public class CloudSessionRegisterService {
     }
 
     /**
-     *
+     * Create a new user account
+     * 
      * @param email
      * @param password
      * @param passwordConfirm
      * @param locale
      * @param screenname
-     * @return
+     * @param birthMonth
+     * @param birthYear
+     * @param coachEmail
+     * @param coachEmailSource
+     * @return New user Cloud Session user ID or zero if account creation has failed
      * @throws NonUniqueEmailException
      * @throws PasswordVerifyException
      * @throws PasswordComplexityException
      * @throws ScreennameUsedException
-     * @throws ServerException
+     * @throws ServerException 
      */
-    public Long registerUser(String email, String password, String passwordConfirm, String locale, String screenname) throws NonUniqueEmailException, PasswordVerifyException, PasswordComplexityException, ScreennameUsedException, ServerException {
+    public Long registerUser(
+            String email, 
+            String password, 
+            String passwordConfirm, 
+            String locale, 
+            String screenname,
+            int birthMonth,
+            int birthYear,
+            String coachEmail,
+            int coachEmailSource) throws
+                NonUniqueEmailException, 
+                PasswordVerifyException, 
+                PasswordComplexityException, 
+                ScreennameUsedException, 
+                ServerException {
+            
         try {
             Map<String, String> data = new HashMap<>();
+            
             data.put("email", email);
             data.put("password", password);
             data.put("password-confirm", passwordConfirm);
             data.put("locale", locale);
             data.put("screenname", screenname);
-            HttpRequest request = HttpRequest.post(getUrl("/user/register")).header("server", SERVER).form(data);
-//        int responseCode = request.code();
-//        System.out.println("Response code: " + responseCode);
+            data.put("bdmonth", Integer.toString(birthMonth));
+            data.put("bdyear", Integer.toString(birthYear));
+            data.put("parent-email", coachEmail);
+            data.put("parent-email-source", Integer.toString(coachEmailSource));
+            
+            // Post the new user request to the cloud session server REST API
+            HttpRequest request = HttpRequest
+                    .post(getUrl("/user/register"))
+                    .header("server", SERVER)
+                    .form(data);
+            
+            // Response from the Cloud Session server
             String response = request.body();
-//        System.out.println(response);
+            
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
+
             if (responseObject.get("success").getAsBoolean()) {
                 return responseObject.get("user").getAsLong();
             } else {
                 switch (responseObject.get("code").getAsInt()) {
                     case 450:
-                        throw new NonUniqueEmailException(responseObject.get("data").getAsString());
+                        throw new NonUniqueEmailException(
+                                responseObject.get("data").getAsString());
                     case 460:
                         throw new PasswordVerifyException();
                     case 490:
                         throw new PasswordComplexityException();
                     case 500:
-                        throw new ScreennameUsedException(responseObject.get("data").getAsString());
+                        throw new ScreennameUsedException(
+                                responseObject.get("data").getAsString());
                 }
-                return null;
+                LOG.warn("Created new user account but user ID is zero.");
+                return 0L;
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax error", jse);
             throw new ServerException(jse);
         }
     }
-
+        
     private String getUrl(String actionUrl) {
         return BASE_URL + actionUrl;
     }
-
 }

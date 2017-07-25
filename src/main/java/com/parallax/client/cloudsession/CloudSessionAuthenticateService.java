@@ -52,8 +52,9 @@ public class CloudSessionAuthenticateService {
     /**
      * Class constructor
      * 
-     * @param server
-     * @param baseUrl
+     * @param server The cloud session host name
+     * @param baseUrl The cloud session URL as defined in the 
+     * blocklyprop.properties file
      */
     public CloudSessionAuthenticateService(String server, String baseUrl) {
         this.SERVER = server;
@@ -83,6 +84,8 @@ public class CloudSessionAuthenticateService {
                 WrongAuthenticationSourceException, 
                 ServerException {
         
+        LOG.debug("Attempting to authenticate user: {}", login);
+
         try {
             Map<String, String> data = new HashMap<>();
             data.put("email", login);
@@ -96,6 +99,9 @@ public class CloudSessionAuthenticateService {
 
             // Convert response from login attempt
             String response = httpRequest.body();
+            
+            LOG.debug("Received a response: {}", response);
+            
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
 
@@ -103,10 +109,26 @@ public class CloudSessionAuthenticateService {
                 // Create and return a user object
                 JsonObject userJson = responseObject.get("user").getAsJsonObject();
                 User user = new User();
+
                 user.setId(userJson.get("id").getAsLong());
                 user.setEmail(userJson.get("email").getAsString());
                 user.setLocale(userJson.get("locale").getAsString());
                 user.setScreenname(userJson.get("screenname").getAsString());
+                user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
+                
+                // These dates might be zero for grandfathered accounts
+                user.setBirthMonth(userJson.get("bdmonth").getAsInt());
+                user.setBirthYear(userJson.get("bdyear").getAsInt());
+                
+                // This gets stored as a Null if the sponsor address is not supplied
+                if (userJson.get("parent-email").isJsonNull()) {
+                    user.setCoachEmail("");
+                }
+                else {
+                    user.setCoachEmail(userJson.get("parent-email").getAsString());
+                }
+                user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
+
                 return user;
             } else {
                 // Authentication failed. Obtain result code
@@ -136,7 +158,7 @@ public class CloudSessionAuthenticateService {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax error", jse);
             throw new ServerException(jse);
         }
     }
