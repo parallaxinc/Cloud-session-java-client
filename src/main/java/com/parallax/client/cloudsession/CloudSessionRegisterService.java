@@ -65,7 +65,7 @@ public class CloudSessionRegisterService {
      * @param birthYear
      * @param coachEmail
      * @param coachEmailSource
-     * @return
+     * @return New user Cloud Session user ID or zero if account creation has failed
      * @throws NonUniqueEmailException
      * @throws PasswordVerifyException
      * @throws PasswordComplexityException
@@ -128,7 +128,8 @@ public class CloudSessionRegisterService {
                         throw new ScreennameUsedException(
                                 responseObject.get("data").getAsString());
                 }
-                return null;
+                LOG.warn("Created new user account but user ID is zero.");
+                return 0L;
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);

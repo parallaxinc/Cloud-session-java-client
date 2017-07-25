@@ -46,20 +46,6 @@ public class CloudSessionUserService {
         this.BASE_URL = baseUrl;
     }
 
-    /*
-            return {'success': True, 'user': {
-            'id': user.id,
-            'email': user.email,
-            'locale': user.locale,
-            'screenname': user.screen_name,
-            'authentication-source': user.auth_source,
-            'bdmonth': user.birth_month,
-            'bdyear': user.birth_year,
-            'parent-email': user.parent_email,
-            'parent-email-source': user.parent_email_source
-
-    
-    */
 
     /**
      * Retrieve a user record with a matching email address
@@ -76,6 +62,7 @@ public class CloudSessionUserService {
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
 
+            // Verify that we have a valid response object
             if (responseObject.get("success").getAsBoolean()) {
                 JsonObject userJson = responseObject.get("user").getAsJsonObject();
                 return populateUser(userJson);
@@ -84,15 +71,19 @@ public class CloudSessionUserService {
                 switch (responseObject.get("code").getAsInt()) {
                     case 400:
                         throw new UnknownUserException(email, message);
+                    default:
+                        throw new ServerException("Unknown response code.");
                 }
-                return null;
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax service error", jse);
             throw new ServerException(jse);
+        } catch (java.lang.NullPointerException npe) {
+            LOG.error("Null pointer detected. Maybe we didn't get a valid Response object. Msg: ", npe);
+            return null;
         }
     }
 
@@ -128,7 +119,7 @@ public class CloudSessionUserService {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax service error", jse);
             throw new ServerException(jse);
         }
     }
@@ -161,7 +152,7 @@ public class CloudSessionUserService {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax service error", jse);
             throw new ServerException(jse);
         }
     }
@@ -206,7 +197,7 @@ public class CloudSessionUserService {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax service error", jse);
             throw new ServerException(jse);
         }
     }
@@ -246,7 +237,7 @@ public class CloudSessionUserService {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax service error", jse);
             throw new ServerException(jse);
         }
     }
