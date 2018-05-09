@@ -31,12 +31,26 @@ public class CloudSessionOAuthService {
     private final String BASE_URL;
     private final String SERVER;
 
+    /**
+     *
+     * @param server
+     * @param baseUrl
+     */
     public CloudSessionOAuthService(String server, String baseUrl) {
         this.SERVER = server;
         this.BASE_URL = baseUrl;
 
     }
 
+    /**
+     *
+     * @param login
+     * @param authenticationSource
+     * @return
+     * @throws UnknownUserException
+     * @throws WrongAuthenticationSourceException
+     * @throws ServerException
+     */
     public User validateUser(String login, String authenticationSource) throws UnknownUserException, WrongAuthenticationSourceException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
@@ -76,6 +90,17 @@ public class CloudSessionOAuthService {
         }
     }
 
+    /**
+     *
+     * @param email
+     * @param authenticationSource
+     * @param locale
+     * @param screenname
+     * @return
+     * @throws NonUniqueEmailException
+     * @throws ScreennameUsedException
+     * @throws ServerException
+     */
     public Long registerUser(String email, String authenticationSource, String locale, String screenname) throws NonUniqueEmailException, ScreennameUsedException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
