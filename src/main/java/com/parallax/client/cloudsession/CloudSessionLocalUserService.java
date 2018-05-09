@@ -176,6 +176,10 @@ public class CloudSessionLocalUserService {
         } catch (JsonSyntaxException jse) {
             LOG.error("Json syntace service error", jse);
             throw new ServerException(jse);
+            
+        } catch (NullPointerException npe) {
+            LOG.error("Encountered a Null Pointer exception.");
+            throw new ServerException(npe);
         }
     }
 
