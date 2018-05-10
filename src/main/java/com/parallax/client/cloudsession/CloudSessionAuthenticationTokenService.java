@@ -32,6 +32,11 @@ public class CloudSessionAuthenticationTokenService {
     private final String BASE_URL;
     private final String SERVER;
 
+    /**
+     *
+     * @param server
+     * @param baseUrl
+     */
     public CloudSessionAuthenticationTokenService(String server, String baseUrl) {
         this.SERVER = server;
         this.BASE_URL = baseUrl;
@@ -41,6 +46,17 @@ public class CloudSessionAuthenticationTokenService {
         return BASE_URL + actionUrl;
     }
 
+    /**
+     *
+     * @param idUser
+     * @param browser
+     * @param ipAddress
+     * @return
+     * @throws UnknownUserIdException
+     * @throws UserBlockedException
+     * @throws EmailNotConfirmedException
+     * @throws ServerException
+     */
     public String request(Long idUser, String browser, String ipAddress) throws UnknownUserIdException, UserBlockedException, EmailNotConfirmedException, ServerException {
         try {
             Map<String, String> data = new HashMap<>();
@@ -76,6 +92,15 @@ public class CloudSessionAuthenticationTokenService {
         }
     }
 
+    /**
+     *
+     * @param token
+     * @param idUser
+     * @param browser
+     * @param ipAddress
+     * @return
+     * @throws ServerException
+     */
     public boolean doConfirm(String token, Long idUser, String browser, String ipAddress) throws ServerException {
         try {
             Map<String, String> data = new HashMap<>();
@@ -104,6 +129,14 @@ public class CloudSessionAuthenticationTokenService {
         }
     }
 
+    /**
+     *
+     * @param idUser
+     * @param browser
+     * @param ipAddress
+     * @return
+     * @throws ServerException
+     */
     public List<String> getTokens(Long idUser, String browser, String ipAddress) throws ServerException {
         try {
             Map<String, String> data = new HashMap<>();
