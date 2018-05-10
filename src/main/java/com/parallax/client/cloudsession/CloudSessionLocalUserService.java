@@ -25,12 +25,20 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Interface to the Cloud Session server
- * 
+ * <p>
  * Supported REST endpoints:
- *      /confirm
- *      /confirm/string_email
- *      /reset/string_email
- *      /password/int_userID
+ * 
+ *      /local/confirm
+ *      Activate user account after verifying the user account email and confirmation token.
+ * 
+ *      /local/confirm/{string_email}
+ *      Send account confirmation request email to user.
+ * 
+ *      /local/reset/{string_email}
+ *      Send a password reset email to the user.  
+ * 
+ *      /local/password/{int_userID}
+ *      Reset user account password with details provided in the payload.
  *
  * @author Michel
  */
@@ -41,15 +49,23 @@ public class CloudSessionLocalUserService {
      */
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionLocalUserService.class);
     
+    
     /**
      * The local user services REST base URL
      */
     private final String BASE_URL;
     
+    
     /**
      *  The local user services host address
      */
     private final String SERVER;
+    
+    
+    // REST endpoint URI constants
+    private final String URI_PASSWORD_RESET = "/local/reset/";
+    private final String URI_CONFIRM_ACCOUNT = "/local/confirm/";
+    private final String URI_PASSWORD_SET = "/local/password/";
 
     /**
      * Class constructor
@@ -65,11 +81,13 @@ public class CloudSessionLocalUserService {
     /**
      * Reset an account password
      * 
-     * @param token
-     * @param email
-     * @param password
-     * @param passwordConfirm
+     * @param token is the GUID issued from the password reset request
+     * @param email is the user account email address affected by the password reset
+     * @param password is the first copy of the password
+     * @param passwordConfirm is the second copy of the password.
+     * 
      * @return boolean true on success, otherwise false
+     * 
      * @throws UnknownUserException
      * @throws PasswordVerifyException
      * @throws PasswordComplexityException
@@ -88,15 +106,22 @@ public class CloudSessionLocalUserService {
                        ServerException {
 
         try {
+            // Create a key-value pair structure to send to the endpoint
             Map<String, String> data = new HashMap<>();
             data.put("token", token);
             data.put("password", password);
             data.put("password-confirm", passwordConfirm);
             
+            // POST the request
             HttpRequest request = HttpRequest.post(
-                    getUrl("/local/reset/" + email)).form(data);
+                    getUrl(URI_PASSWORD_RESET + email)).form(data);
 
+            // Get response from Cloud Session server
             String response = request.body();
+            if (response == null) {
+                throw new ServerException("No response from server.");
+            }
+
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
 
@@ -145,9 +170,14 @@ public class CloudSessionLocalUserService {
         
         try {
             HttpRequest request = HttpRequest.get(
-                    getUrl("/local/reset/" + email)).header("server", SERVER);
+                    getUrl(URI_PASSWORD_RESET + email)).header("server", SERVER);
 
+            // Get response from Cloud Session server
             String response = request.body();
+            if (response == null) {
+                throw new ServerException("No response from server.");
+            }
+
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
 
@@ -203,9 +233,14 @@ public class CloudSessionLocalUserService {
             data.put("token", token);
             
             HttpRequest request = HttpRequest.post(
-                    getUrl("/local/confirm")).form(data);
+                    getUrl(URI_CONFIRM_ACCOUNT)).form(data);
 
+            // Get response from Cloud Session server
             String response = request.body();
+            if (response == null) {
+                throw new ServerException("No response from server.");
+            }
+
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
             
@@ -255,9 +290,14 @@ public class CloudSessionLocalUserService {
         
         try {
             HttpRequest request = HttpRequest.get(
-                    getUrl("/local/confirm/" + email)).header("server", SERVER);
+                    getUrl(URI_CONFIRM_ACCOUNT + email)).header("server", SERVER);
 
+            // Get response from Cloud Session server
             String response = request.body();
+            if (response == null) {
+                throw new ServerException("No response from server.");
+            }
+
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
 
@@ -322,9 +362,14 @@ public class CloudSessionLocalUserService {
             data.put("password-confirm", confirmPassword);
             
             HttpRequest request = HttpRequest.post(
-                    getUrl("/local/password/" + idUser)).form(data);
+                    getUrl(URI_PASSWORD_SET + idUser)).form(data);
 
+            // Get response from Cloud Session server
             String response = request.body();
+            if (response == null) {
+                throw new ServerException("No response from server.");
+            }
+
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
 
