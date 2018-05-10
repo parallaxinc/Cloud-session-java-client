@@ -32,18 +32,26 @@ public class CloudSessionRegisterService {
      */
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionRegisterService.class);
 
+    
     /**
      * Base URL use to obtain authentication service.
      */
     private final String BASE_URL;
     
+    
     /**
      * Host name
      */
     private final String SERVER;
+    
+    
+    // REST endpoint URI constants
+    private final String URI_REGISTER_USER = "/user/register";
 
+
+    
     /**
-     * 
+     * Set the REST host server and base REST URI
      * 
      * @param server The cloud session host name
      * @param baseUrl The cloud session URL as defined in the 
@@ -52,9 +60,10 @@ public class CloudSessionRegisterService {
         this.SERVER = server;
         this.BASE_URL = baseUrl;
     }
+    
 
     /**
-     * Create a new user account
+     * Create a new user account in the CloudSession database
      * 
      * @param email
      * @param password
@@ -65,7 +74,9 @@ public class CloudSessionRegisterService {
      * @param birthYear
      * @param coachEmail
      * @param coachEmailSource
+     * 
      * @return New user Cloud Session user ID or zero if account creation has failed
+     * 
      * @throws NonUniqueEmailException
      * @throws PasswordVerifyException
      * @throws PasswordComplexityException
@@ -103,12 +114,17 @@ public class CloudSessionRegisterService {
             
             // Post the new user request to the cloud session server REST API
             HttpRequest request = HttpRequest
-                    .post(getUrl("/user/register"))
+                    .post(getUrl(URI_REGISTER_USER))
                     .header("server", SERVER)
                     .form(data);
             
             // Response from the Cloud Session server
             String response = request.body();
+            if (response == null) {
+                throw new ServerException("No response from server.");
+            }
+
+            LOG.debug("registerUser returns:{}",response );
             
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
@@ -116,6 +132,7 @@ public class CloudSessionRegisterService {
             if (responseObject.get("success").getAsBoolean()) {
                 return responseObject.get("user").getAsLong();
             } else {
+                // The call failed. Respond appropriately
                 switch (responseObject.get("code").getAsInt()) {
                     case 450:
                         throw new NonUniqueEmailException(
