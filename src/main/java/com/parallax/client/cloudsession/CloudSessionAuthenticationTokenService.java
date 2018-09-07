@@ -87,7 +87,7 @@ public class CloudSessionAuthenticationTokenService {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax error: {}", jse.getMessage());
             throw new ServerException(jse);
         }
     }
@@ -102,6 +102,8 @@ public class CloudSessionAuthenticationTokenService {
      * @throws ServerException
      */
     public boolean doConfirm(String token, Long idUser, String browser, String ipAddress) throws ServerException {
+        String response = "";
+        
         try {
             Map<String, String> data = new HashMap<>();
             data.put("token", token);
@@ -109,10 +111,8 @@ public class CloudSessionAuthenticationTokenService {
             data.put("browser", browser);
             data.put("ipAddress", ipAddress);
             HttpRequest request = HttpRequest.post(getUrl("/authtoken/confirm")).header("server", SERVER).form(data);
-//        int responseCode = request.code();
-//        System.out.println("Response code: " + responseCode);
-            String response = request.body();
-//        System.out.println(response);
+
+            response = request.body();
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
             if (responseObject.get("success").getAsBoolean()) {
@@ -124,7 +124,8 @@ public class CloudSessionAuthenticationTokenService {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error(
+                    "Json syntax error: {} - {}",response, jse.getMessage());
             throw new ServerException(jse);
         }
     }
@@ -143,13 +144,12 @@ public class CloudSessionAuthenticationTokenService {
             data.put("browser", browser);
             data.put("ipAddress", ipAddress);
             HttpRequest request = HttpRequest.post(getUrl("/authtoken/tokens/" + idUser)).header("server", SERVER).form(data);
-//        int responseCode = request.code();
-//        System.out.println("Response code: " + responseCode);
+
             String response = request.body();
-//        System.out.println(response);
             JsonElement jelement = new JsonParser().parse(response);
             JsonArray jsonTokens = jelement.getAsJsonArray();
             List<String> tokens = new ArrayList<>();
+
             for (JsonElement token : jsonTokens) {
                 tokens.add(token.getAsString());
             }
@@ -158,7 +158,7 @@ public class CloudSessionAuthenticationTokenService {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax error: {}", jse.getMessage());
             throw new ServerException(jse);
         }
     }

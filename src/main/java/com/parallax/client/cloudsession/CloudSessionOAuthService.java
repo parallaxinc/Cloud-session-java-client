@@ -85,7 +85,7 @@ public class CloudSessionOAuthService {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax error: {}", jse.getMessage());
             throw new ServerException(jse);
         }
     }
@@ -130,7 +130,7 @@ public class CloudSessionOAuthService {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax error: {}", jse.getMessage());
             throw new ServerException(jse);
         }
     }
