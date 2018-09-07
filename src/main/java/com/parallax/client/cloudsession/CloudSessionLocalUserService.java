@@ -226,20 +226,28 @@ public class CloudSessionLocalUserService {
             throws UnknownUserException, 
                    WrongAuthenticationSourceException, 
                    ServerException {
+
+        String response = null;
+        String cloudSessionUri = null;
         
         try {
             Map<String, String> data = new HashMap<>();
             data.put("email", email);
             data.put("token", token);
             
-            HttpRequest request = HttpRequest.post(
-                    getUrl(URI_CONFIRM_ACCOUNT)).form(data);
+            cloudSessionUri = getUrl(URI_CONFIRM_ACCOUNT);
+            
+            LOG.info("Requesting from Cloud Session server: '{}'", cloudSessionUri);
+
+            HttpRequest request = HttpRequest.post(cloudSessionUri).form(data);
 
             // Get response from Cloud Session server
-            String response = request.body();
+            response = request.body();
             if (response == null) {
                 throw new ServerException("No response from server.");
             }
+            
+            LOG.info("Cloud Session says: '{}'", response);
 
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
@@ -266,7 +274,7 @@ public class CloudSessionLocalUserService {
             throw new ServerException(hre);
             
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax error", jse.getMessage());
             throw new ServerException(jse);
         }
     }
