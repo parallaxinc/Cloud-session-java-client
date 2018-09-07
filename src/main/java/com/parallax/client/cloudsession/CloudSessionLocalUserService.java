@@ -64,7 +64,7 @@ public class CloudSessionLocalUserService {
     
     // REST endpoint URI constants
     private final String URI_PASSWORD_RESET = "/local/reset/";
-    private final String URI_CONFIRM_ACCOUNT = "/local/confirm/";
+    private final String URI_CONFIRM_ACCOUNT = "/local/confirm";
     private final String URI_PASSWORD_SET = "/local/password/";
 
     /**
@@ -298,7 +298,7 @@ public class CloudSessionLocalUserService {
         
         try {
             HttpRequest request = HttpRequest.get(
-                    getUrl(URI_CONFIRM_ACCOUNT + email)).header("server", SERVER);
+                    getUrl(URI_CONFIRM_ACCOUNT + "/" + email)).header("server", SERVER);
 
             // Get response from Cloud Session server
             String response = request.body();
