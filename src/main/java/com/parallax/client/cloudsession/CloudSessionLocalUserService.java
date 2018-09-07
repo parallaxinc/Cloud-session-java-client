@@ -148,7 +148,7 @@ public class CloudSessionLocalUserService {
             throw new ServerException(hre);
             
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax service error", jse.getMessage());
             throw new ServerException(jse);
         }
     }
@@ -204,7 +204,7 @@ public class CloudSessionLocalUserService {
             throw new ServerException(hre);
             
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax error: {}", jse.getMessage());
             throw new ServerException(jse);
             
         } catch (NullPointerException npe) {
@@ -232,8 +232,10 @@ public class CloudSessionLocalUserService {
             data.put("email", email);
             data.put("token", token);
             
-            HttpRequest request = HttpRequest.post(
-                    getUrl(URI_CONFIRM_ACCOUNT)).form(data);
+            String url = getUrl(URI_CONFIRM_ACCOUNT);
+            LOG.info("Sending '{}' to Cloud Server", url);
+            
+            HttpRequest request = HttpRequest.post(url).form(data);
 
             // Get response from Cloud Session server
             String response = request.body();
@@ -241,6 +243,8 @@ public class CloudSessionLocalUserService {
                 throw new ServerException("No response from server.");
             }
 
+            LOG.info("Cloud Session server says: {}", response);
+            
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
             
@@ -266,7 +270,7 @@ public class CloudSessionLocalUserService {
             throw new ServerException(hre);
             
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax error: {}", jse.getMessage());
             throw new ServerException(jse);
         }
     }
