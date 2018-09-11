@@ -35,6 +35,7 @@ public class CloudSessionBucketService {
     public CloudSessionBucketService(String baseUrl) {
         this.BASE_URL = baseUrl;
     }
+    
 
     /**
      *  Inform the Cloud Session service to decrement the token count for
@@ -61,6 +62,7 @@ public class CloudSessionBucketService {
             ServerException {
         
         HttpRequest request = HttpRequest.get(getUrl("/bucket/consume/" + type + "/" + id));
+        
         return handleResponse(type, id, request);
     }
 
@@ -119,40 +121,44 @@ public class CloudSessionBucketService {
             ServerException {
         
         try {
-            String response = request.body();
+            if (request.ok()) {
+                String response = request.body();
+                JsonElement jelement = new JsonParser().parse(response);
+                JsonObject responseObject = jelement.getAsJsonObject();
 
-            JsonElement jelement = new JsonParser().parse(response);
-            JsonObject responseObject = jelement.getAsJsonObject();
-
-            if (responseObject.get("success").getAsBoolean()) {
-                return true;
-            } else {
-                String message = responseObject.get("message").getAsString();
-                switch (responseObject.get("code").getAsInt()) {
-                    case 400:
-                        throw new UnknownUserIdException(id, message);
-                    case 420:
-                        throw new UserBlockedException(message);
-                    case 430:
-                        throw new EmailNotConfirmedException(message);
-                    case 470:
-                        // Rate exceeded - no tokens are left in the bucket
-                        String nextTime = responseObject.get("data").getAsString();
-                        LOG.info("Compile bucket empty. Time to next token is:", nextTime);
+                if (responseObject.get("success").getAsBoolean()) {
+                    return true;
+                } else {
+                    String message = responseObject.get("message").getAsString();
+                    switch (responseObject.get("code").getAsInt()) {
+                        case 400:
+                            throw new UnknownUserIdException(id, message);
+                        case 420:
+                            throw new UserBlockedException(message);
+                        case 430:
+                            throw new EmailNotConfirmedException(message);
+                        case 470:
+                            // Rate exceeded - no tokens are left in the bucket
+                            String nextTime = responseObject.get("data").getAsString();
+                            LOG.info("Compile bucket empty. Time to next token is:", nextTime);
                         
-                        throw new InsufficientBucketTokensException(message, nextTime);
-                    case 480:
-                        throw new UnknownBucketTypeException(type, message);
-                }
+                            throw new InsufficientBucketTokensException(message, nextTime);
+                        case 480:
+                            throw new UnknownBucketTypeException(type, message);
+                    }
+                    
                 return false;
+                }
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
+            
         } catch (JsonSyntaxException jse) {
             LOG.error("Json syntace service error", jse);
             throw new ServerException(jse);
         }
+        
+        return false;
     }
-
 }
