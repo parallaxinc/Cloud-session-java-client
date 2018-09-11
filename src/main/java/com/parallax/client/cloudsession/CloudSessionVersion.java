@@ -13,6 +13,15 @@ package com.parallax.client.cloudsession;
  */
 public class CloudSessionVersion {
     
-    static final String Version = "1.2.0";
+    static final String Version = "1.2.1";
     
 }
+
+/*
+ * Revision history
+ *
+ * 1.2.1    All calls to REST services now check the HTTP response code prior
+ *          to evaluating any data returned in the body of the response.
+ *
+ *          Upgraded the Gson package to version 2.8.5.
+*/

@@ -39,10 +39,12 @@ public class CloudSessionAuthenticateService {
      */
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionAuthenticateService.class);
     
+    
     /**
      * Base URL use to obtain authentication service.
      */
     private final String BASE_URL;
+    
     
     /**
      * Host name
@@ -84,7 +86,7 @@ public class CloudSessionAuthenticateService {
                 WrongAuthenticationSourceException, 
                 ServerException {
         
-        LOG.debug("Attempting to authenticate user: {}", login);
+        LOG.info("Contacting endpoint '/authenticate/local");
 
         try {
             Map<String, String> data = new HashMap<>();
@@ -92,24 +94,21 @@ public class CloudSessionAuthenticateService {
             data.put("password", password);
 
             // Issue POST request to attempt login
-            HttpRequest httpRequest = HttpRequest
+            HttpRequest request = HttpRequest
                     .post(getUrl("/authenticate/local"))
                     .header("server", SERVER)
                     .form(data);
 
-            // Convert response from login attempt
-            String response = httpRequest.body();
-            
-            LOG.debug("Received a response: {}", response);
-            
+            if (request.ok()) {
+            String response = request.body();
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
 
             if (responseObject.get("success").getAsBoolean()) {
                 // Create and return a user object
                 JsonObject userJson = responseObject.get("user").getAsJsonObject();
-                User user = new User();
 
+                User user = new User();
                 user.setId(userJson.get("id").getAsLong());
                 user.setEmail(userJson.get("email").getAsString());
                 user.setLocale(userJson.get("locale").getAsString());
@@ -154,6 +153,7 @@ public class CloudSessionAuthenticateService {
                 LOG.warn("Unexpected error: {}", response);
                 return null;
             }
+            }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
@@ -161,6 +161,8 @@ public class CloudSessionAuthenticateService {
             LOG.error("Json syntax error", jse);
             throw new ServerException(jse);
         }
+        
+        return null;
     }
 
     /**
