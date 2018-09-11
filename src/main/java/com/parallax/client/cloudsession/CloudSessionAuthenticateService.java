@@ -39,10 +39,12 @@ public class CloudSessionAuthenticateService {
      */
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionAuthenticateService.class);
     
+    
     /**
      * Base URL use to obtain authentication service.
      */
     private final String BASE_URL;
+    
     
     /**
      * Host name
