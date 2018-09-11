@@ -39,9 +39,9 @@ public class CloudSessionOAuthService {
     public CloudSessionOAuthService(String server, String baseUrl) {
         this.SERVER = server;
         this.BASE_URL = baseUrl;
-
     }
 
+    
     /**
      *
      * @param login
@@ -56,38 +56,48 @@ public class CloudSessionOAuthService {
             Map<String, String> data = new HashMap<>();
             data.put("email", login);
             data.put("source", authenticationSource);
-            HttpRequest httpRequest = HttpRequest.post(getUrl("/oauth/validate")).header("server", SERVER).form(data);
-            String response = httpRequest.body();
+            
+            HttpRequest request = HttpRequest
+                    .post(getUrl("/oauth/validate"))
+                    .header("server", SERVER).form(data);
+            
+            if (request.ok()) {
+                String response = request.body();
+                JsonElement jelement = new JsonParser().parse(response);
+                JsonObject responseObject = jelement.getAsJsonObject();
 
-            JsonElement jelement = new JsonParser().parse(response);
-            JsonObject responseObject = jelement.getAsJsonObject();
-            if (responseObject.get("success").getAsBoolean()) {
-                JsonObject userJson = responseObject.get("user").getAsJsonObject();
-                User user = new User();
-                user.setId(userJson.get("id").getAsLong());
-                user.setEmail(userJson.get("email").getAsString());
-                user.setLocale(userJson.get("locale").getAsString());
-                user.setScreenname(userJson.get("screenname").getAsString());
-                return user;
-            } else {
-                String message = responseObject.get("message").getAsString();
-                switch (responseObject.get("code").getAsInt()) {
-                    case 400:
-                        throw new UnknownUserException(login, message);
-                    case 480:
-                        String userAuthenticationSource = responseObject.get("data").getAsString();
-                        throw new WrongAuthenticationSourceException(userAuthenticationSource);
+                if (responseObject.get("success").getAsBoolean()) {
+                    JsonObject userJson = responseObject.get("user").getAsJsonObject();
+                    User user = new User();
+                    user.setId(userJson.get("id").getAsLong());
+                    user.setEmail(userJson.get("email").getAsString());
+                    user.setLocale(userJson.get("locale").getAsString());
+                    user.setScreenname(userJson.get("screenname").getAsString());
+                    return user;
+                } else {
+                    String message = responseObject.get("message").getAsString();
+                    switch (responseObject.get("code").getAsInt()) {
+                        case 400:
+                            throw new UnknownUserException(login, message);
+                        case 480:
+                            String userAuthenticationSource = responseObject.get("data").getAsString();
+                            throw new WrongAuthenticationSourceException(userAuthenticationSource);
+                    }
+
+                    LOG.warn("Unexpected error: {}", response);
+                    return null;
                 }
-                LOG.warn("Unexpected error: {}", response);
-                return null;
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
+            
         } catch (JsonSyntaxException jse) {
             LOG.error("Json syntax error: {}", jse.getMessage());
             throw new ServerException(jse);
         }
+        
+        return null;
     }
 
     /**
@@ -101,38 +111,56 @@ public class CloudSessionOAuthService {
      * @throws ScreennameUsedException
      * @throws ServerException
      */
-    public Long registerUser(String email, String authenticationSource, String locale, String screenname) throws NonUniqueEmailException, ScreennameUsedException, ServerException {
+    public Long registerUser(
+            String email, 
+            String authenticationSource, 
+            String locale, 
+            String screenname) throws
+                    NonUniqueEmailException, 
+                    ScreennameUsedException, 
+                    ServerException {
+
         try {
+            // Prepare payload to send with REST request
             Map<String, String> data = new HashMap<>();
             data.put("email", email);
             data.put("source", authenticationSource);
             data.put("locale", locale);
             data.put("screenname", screenname);
-            HttpRequest request = HttpRequest.post(getUrl("/oauth/create")).header("server", SERVER).form(data);
-//        int responseCode = request.code();
-//        System.out.println("Response code: " + responseCode);
-            String response = request.body();
-//        System.out.println(response);
-            JsonElement jelement = new JsonParser().parse(response);
-            JsonObject responseObject = jelement.getAsJsonObject();
-            if (responseObject.get("success").getAsBoolean()) {
-                return responseObject.get("user").getAsLong();
-            } else {
-                switch (responseObject.get("code").getAsInt()) {
-                    case 450:
-                        throw new NonUniqueEmailException(responseObject.get("data").getAsString());
-                    case 500:
-                        throw new ScreennameUsedException(responseObject.get("data").getAsString());
+            
+            HttpRequest request = HttpRequest
+                    .post(getUrl("/oauth/create"))
+                    .header("server", SERVER)
+                    .form(data);
+
+            if (request.ok()) {
+                String response = request.body();
+                JsonElement jelement = new JsonParser().parse(response);
+                JsonObject responseObject = jelement.getAsJsonObject();
+            
+                if (responseObject.get("success").getAsBoolean()) {
+                    return responseObject.get("user").getAsLong();
+                } else {
+                    switch (responseObject.get("code").getAsInt()) {
+                        case 450:
+                            throw new NonUniqueEmailException(responseObject.get("data").getAsString());
+                        case 500:
+                            throw new ScreennameUsedException(responseObject.get("data").getAsString());
+                    }
+                    
+                    return null;
                 }
-                return null;
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
+            
         } catch (JsonSyntaxException jse) {
             LOG.error("Json syntax error: {}", jse.getMessage());
             throw new ServerException(jse);
         }
+        
+        return null;
     }
 
     private String getUrl(String actionUrl) {

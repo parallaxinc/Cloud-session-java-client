@@ -6,19 +6,23 @@
 package com.parallax.client.cloudsession;
 
 import com.github.kevinsawicki.http.HttpRequest;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+
 import com.parallax.client.cloudsession.exceptions.EmailNotConfirmedException;
 import com.parallax.client.cloudsession.exceptions.ServerException;
 import com.parallax.client.cloudsession.exceptions.UnknownUserIdException;
 import com.parallax.client.cloudsession.exceptions.UserBlockedException;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +33,7 @@ import org.slf4j.LoggerFactory;
 public class CloudSessionAuthenticationTokenService {
 
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionAuthenticationTokenService.class);
+    
     private final String BASE_URL;
     private final String SERVER;
 
@@ -57,31 +62,44 @@ public class CloudSessionAuthenticationTokenService {
      * @throws EmailNotConfirmedException
      * @throws ServerException
      */
-    public String request(Long idUser, String browser, String ipAddress) throws UnknownUserIdException, UserBlockedException, EmailNotConfirmedException, ServerException {
+    public String request(Long idUser, String browser, String ipAddress) throws
+            UnknownUserIdException,
+            UserBlockedException,
+            EmailNotConfirmedException,
+            ServerException {
+        
+        LOG.debug("Contacting endpoint '/authtoken/request");
+
         try {
             Map<String, String> data = new HashMap<>();
             data.put("idUser", String.valueOf(idUser));
             data.put("browser", browser);
             data.put("ipAddress", ipAddress);
-            HttpRequest request = HttpRequest.post(getUrl("/authtoken/request")).header("server", SERVER).form(data);
-//        int responseCode = request.code();
-//        System.out.println("Response code: " + responseCode);
-            String response = request.body();
-//        System.out.println(response);
-            JsonElement jelement = new JsonParser().parse(response);
-            JsonObject responseObject = jelement.getAsJsonObject();
-            if (responseObject.get("success").getAsBoolean()) {
-                return responseObject.get("token").getAsString();
-            } else {
-                switch (responseObject.get("code").getAsInt()) {
-                    case 400:
-                        throw new UnknownUserIdException(responseObject.get("data").getAsString());
-                    case 420:
-                        throw new UserBlockedException();
-                    case 430:
-                        throw new EmailNotConfirmedException();
-                }
+            
+            HttpRequest request = HttpRequest
+                    .post(getUrl("/authtoken/request"))
+                    .header("server", SERVER)
+                    .form(data);
+            
+            if (request.ok()) {
+                String response = request.body();
+                JsonElement jelement = new JsonParser().parse(response);
+                JsonObject responseObject = jelement.getAsJsonObject();
+                
+                if (responseObject.get("success").getAsBoolean()) {
+                    return responseObject.get("token").getAsString();
+                } else {
+                    switch (responseObject.get("code").getAsInt()) {
+                        case 400:
+                            throw new UnknownUserIdException(responseObject.get("data").getAsString());
+                        case 420:
+                            throw new UserBlockedException();
+                        case 430:
+                            throw new EmailNotConfirmedException();
+                    }
+                    
                 return null;
+                }
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
@@ -90,7 +108,10 @@ public class CloudSessionAuthenticationTokenService {
             LOG.error("Json syntax error: {}", jse.getMessage());
             throw new ServerException(jse);
         }
+        
+        return null;
     }
+    
 
     /**
      *
@@ -102,7 +123,10 @@ public class CloudSessionAuthenticationTokenService {
      * @throws ServerException
      */
     public boolean doConfirm(String token, Long idUser, String browser, String ipAddress) throws ServerException {
-        String response = "";
+
+        LOG.debug("Contacting endpoint '/authtoken/confirm");
+        
+        String response = null;
         
         try {
             Map<String, String> data = new HashMap<>();
@@ -110,15 +134,22 @@ public class CloudSessionAuthenticationTokenService {
             data.put("idUser", String.valueOf(idUser));
             data.put("browser", browser);
             data.put("ipAddress", ipAddress);
-            HttpRequest request = HttpRequest.post(getUrl("/authtoken/confirm")).header("server", SERVER).form(data);
 
-            response = request.body();
-            JsonElement jelement = new JsonParser().parse(response);
-            JsonObject responseObject = jelement.getAsJsonObject();
-            if (responseObject.get("success").getAsBoolean()) {
-                return true;
-            } else {
-                return false;
+            HttpRequest request = HttpRequest
+                    .post(getUrl("/authtoken/confirm"))
+                    .header("server", SERVER)
+                    .form(data);
+
+            if (request.ok()) {
+                response = request.body();
+                JsonElement jelement = new JsonParser().parse(response);
+                JsonObject responseObject = jelement.getAsJsonObject();
+                
+                if (responseObject.get("success").getAsBoolean()) {
+                    return true;
+                } else {
+                    return false;
+                }
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
@@ -128,8 +159,11 @@ public class CloudSessionAuthenticationTokenService {
                     "Json syntax error: {} - {}",response, jse.getMessage());
             throw new ServerException(jse);
         }
+        
+        return false;
     }
 
+    
     /**
      *
      * @param idUser
@@ -139,21 +173,31 @@ public class CloudSessionAuthenticationTokenService {
      * @throws ServerException
      */
     public List<String> getTokens(Long idUser, String browser, String ipAddress) throws ServerException {
+
+        LOG.debug("Contacting endpoint '/authtoken/tokens");
+        
         try {
             Map<String, String> data = new HashMap<>();
             data.put("browser", browser);
             data.put("ipAddress", ipAddress);
-            HttpRequest request = HttpRequest.post(getUrl("/authtoken/tokens/" + idUser)).header("server", SERVER).form(data);
-
-            String response = request.body();
-            JsonElement jelement = new JsonParser().parse(response);
-            JsonArray jsonTokens = jelement.getAsJsonArray();
-            List<String> tokens = new ArrayList<>();
-
-            for (JsonElement token : jsonTokens) {
-                tokens.add(token.getAsString());
+            
+            HttpRequest request = HttpRequest
+                    .post(getUrl("/authtoken/tokens/" + idUser))
+                    .header("server", SERVER)
+                    .form(data);
+            
+            if (request.ok()) {
+                String response = request.body();
+                JsonElement jelement = new JsonParser().parse(response);
+                JsonArray jsonTokens = jelement.getAsJsonArray();
+                List<String> tokens = new ArrayList<>();
+                
+                for (JsonElement token : jsonTokens) {
+                    tokens.add(token.getAsString());
+                }
+                
+                return tokens;
             }
-            return tokens;
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
@@ -161,6 +205,8 @@ public class CloudSessionAuthenticationTokenService {
             LOG.error("Json syntax error: {}", jse.getMessage());
             throw new ServerException(jse);
         }
+        
+        return null;
     }
 
 }
