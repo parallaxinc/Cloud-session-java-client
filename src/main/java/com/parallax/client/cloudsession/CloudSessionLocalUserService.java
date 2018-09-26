@@ -11,6 +11,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.parallax.client.cloudsession.exceptions.EmailAlreadyConfirmedException;
+import com.parallax.client.cloudsession.exceptions.EmailNotConfirmedException;
 import com.parallax.client.cloudsession.exceptions.InsufficientBucketTokensException;
 import com.parallax.client.cloudsession.exceptions.PasswordComplexityException;
 import com.parallax.client.cloudsession.exceptions.PasswordVerifyException;
@@ -66,6 +67,15 @@ public class CloudSessionLocalUserService {
     private final String URI_PASSWORD_RESET = "/local/reset/";
     private final String URI_CONFIRM_ACCOUNT = "/local/confirm";
     private final String URI_PASSWORD_SET = "/local/password/";
+    
+    // Exception code constants
+    static final int UnknownUser = 400;
+    static final int EmailNotConfirmed = 430;
+    static final int PasswordVerify = 460;
+    static final int InsufficientBucketTokens = 470;
+    static final int WrongAuthenticationSource = 480;
+    static final int PasswordComplexity = 490;
+    
 
     /**
      * Class constructor
@@ -99,12 +109,14 @@ public class CloudSessionLocalUserService {
             String email, 
             String password, 
             String passwordConfirm) throws 
-                    UnknownUserException, 
+                    UnknownUserException,
+                    EmailNotConfirmedException,
                     PasswordVerifyException, 
                     PasswordComplexityException, 
                     WrongAuthenticationSourceException, 
                     ServerException {
-
+        LOG.debug("Resetting an user password.");
+        
         try {
             // Create a key-value pair structure to send to the endpoint
             Map<String, String> data = new HashMap<>();
@@ -127,14 +139,21 @@ public class CloudSessionLocalUserService {
                 } 
                 else {
                     switch (responseObject.get("code").getAsInt()) {
-                        case 400:
+                        case UnknownUser:
                             throw new UnknownUserException(
                                     responseObject.get("data").getAsString());
-                        case 460:
+                            
+                        case EmailNotConfirmed:
+                            throw new EmailNotConfirmedException(
+                                    responseObject.get("data").getAsString());
+                            
+                        case PasswordVerify:
                             throw new PasswordVerifyException();
-                        case 490:
+                            
+                        case PasswordComplexity:
                             throw new PasswordComplexityException();
-                        case 480:
+                            
+                        case WrongAuthenticationSource:
                             throw new WrongAuthenticationSourceException(
                                     responseObject.get("data").getAsString());
                     }
@@ -163,15 +182,21 @@ public class CloudSessionLocalUserService {
      * @throws ServerException
      */
     public boolean requestPasswordReset(String email) 
-            throws UnknownUserException, 
+            throws UnknownUserException,
+                   EmailNotConfirmedException,
                    InsufficientBucketTokensException, 
                    WrongAuthenticationSourceException, 
                    ServerException {
         
+        LOG.debug("Asking for a password reset for {}", email);
+        
         try {
+            
             HttpRequest request = HttpRequest.get(
                     getUrl(URI_PASSWORD_RESET + email)).header("server", SERVER);
 
+            LOG.info("Result from Cloud Session is: {}", request.message());
+            
             if (request.ok()) {
                 // Get response from Cloud Session server
                 String response = request.body();
@@ -183,14 +208,23 @@ public class CloudSessionLocalUserService {
                 } 
                 else {
                     switch (responseObject.get("code").getAsInt()) {
-                        case 400:
+                        case UnknownUser:
+                            LOG.warn("Unknown user exception: {}", responseObject.get("data").getAsString());
                             throw new UnknownUserException(
                                     responseObject.get("data").getAsString());
-                        case 470:
+                        case EmailNotConfirmed:
+                            LOG.warn("Account email address not confirmed");
+                            throw new EmailNotConfirmedException(
+                                    responseObject.get("data").getAsString());
+                            
+                        case InsufficientBucketTokens:
+                            LOG.warn("Insufficient bucket tokens available");
                             throw new InsufficientBucketTokensException(
                                     responseObject.get("message").getAsString(),
                                     responseObject.get("data").getAsString());
-                        case 480:
+                            
+                        case WrongAuthenticationSource:
+                            LOG.warn("oAuth user attempting to use Local authentication source");
                             throw new WrongAuthenticationSourceException(
                                     responseObject.get("data").getAsString());
                     }
@@ -226,6 +260,8 @@ public class CloudSessionLocalUserService {
             throws UnknownUserException, 
                    WrongAuthenticationSourceException, 
                    ServerException {
+        
+        LOG.debug("Confirming a user account.");
 
         String response = null;
         String cloudSessionUri = null;
@@ -252,15 +288,14 @@ public class CloudSessionLocalUserService {
                 } 
                 else {
                     switch (responseObject.get("code").getAsInt()) {
-                        case 400:
+                        case UnknownUser:
+                            LOG.warn("Unknown user exception: {}", responseObject.get("data").getAsString());
                             throw new UnknownUserException(
                                     responseObject.get("data").getAsString());
-                        case 480:
+                        case WrongAuthenticationSource:
+                            LOG.warn("oAuth user attempting to use Local authentication source");
                             throw new WrongAuthenticationSourceException(
                                     responseObject.get("data").getAsString());
-                        case 510:
-                            // The submitted token has expired or was not found 
-                            return false;
                     }
                     return false;
                 }
@@ -293,6 +328,7 @@ public class CloudSessionLocalUserService {
                    EmailAlreadyConfirmedException, 
                    WrongAuthenticationSourceException, 
                    ServerException {
+        LOG.debug("Requesting a new account confirmation email.");
         
         try {
             HttpRequest request = HttpRequest.get(
@@ -310,18 +346,28 @@ public class CloudSessionLocalUserService {
                 else {
                     switch (responseObject.get("code").getAsInt()) {
                         case 400:
+                            LOG.warn("Unknown user exception: {}",
+                                    responseObject.get("data").getAsString());
                             throw new UnknownUserException(
                                     responseObject.get("data").getAsString());
+                            
                         case 470:
+                            LOG.warn("Bucket tokens exhausted: {}",
+                                    responseObject.get("data").getAsString());
                             throw new InsufficientBucketTokensException(
                                     responseObject.get("message").getAsString(), 
                                     responseObject.get("data").getAsString());
+                            
                         case 480:
+                            LOG.warn("oAuth user attempting to use Local authentication source");
                             throw new WrongAuthenticationSourceException(
                                     responseObject.get("data").getAsString());
+                            
                         case 520:
+                            LOG.warn("Email is already confirmed");
                             throw new EmailAlreadyConfirmedException(
                                     responseObject.get("message").getAsString());
+                            
                         case 540:
                             throw new ServerException (
                                     responseObject.get("message").getAsString());
@@ -355,11 +401,13 @@ public class CloudSessionLocalUserService {
             String oldPassword, 
             String password, 
             String confirmPassword) 
-                throws UnknownUserIdException, 
+                throws UnknownUserIdException,
+                       EmailNotConfirmedException,
                        PasswordVerifyException, 
                        PasswordComplexityException, 
                        WrongAuthenticationSourceException, 
                        ServerException {
+        LOG.debug("Changing usr password.");
         
         try {
             Map<String, String> data = new HashMap<>();
@@ -408,6 +456,8 @@ public class CloudSessionLocalUserService {
 
     // Helper function to build a complete URL
     private String getUrl(String actionUrl) {
+        LOG.debug("Building url '{}'", BASE_URL + actionUrl);
+        
         return BASE_URL + actionUrl;
     }
 }

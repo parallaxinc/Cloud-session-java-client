@@ -86,12 +86,13 @@ public class CloudSessionAuthenticateService {
                 WrongAuthenticationSourceException, 
                 ServerException {
         
-        LOG.info("Contacting endpoint '/authenticate/local");
 
         try {
             Map<String, String> data = new HashMap<>();
             data.put("email", login);
             data.put("password", password);
+    
+            LOG.debug("Contacting endpoint '/authenticate/local");
 
             // Issue POST request to attempt login
             HttpRequest request = HttpRequest
@@ -99,60 +100,74 @@ public class CloudSessionAuthenticateService {
                     .header("server", SERVER)
                     .form(data);
 
+            LOG.debug("Return from endpoint call");
+            
             if (request.ok()) {
-            String response = request.body();
-            JsonElement jelement = new JsonParser().parse(response);
-            JsonObject responseObject = jelement.getAsJsonObject();
-
-            if (responseObject.get("success").getAsBoolean()) {
-                // Create and return a user object
-                JsonObject userJson = responseObject.get("user").getAsJsonObject();
-
-                User user = new User();
-                user.setId(userJson.get("id").getAsLong());
-                user.setEmail(userJson.get("email").getAsString());
-                user.setLocale(userJson.get("locale").getAsString());
-                user.setScreenname(userJson.get("screenname").getAsString());
-                user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
                 
-                // These dates might be zero for grandfathered accounts
-                user.setBirthMonth(userJson.get("bdmonth").getAsInt());
-                user.setBirthYear(userJson.get("bdyear").getAsInt());
+                LOG.debug("Request returned OK");
                 
-                // This gets stored as a Null if the sponsor address is not supplied
-                if (userJson.get("parent-email").isJsonNull()) {
-                    user.setCoachEmail("");
-                }
-                else {
-                    user.setCoachEmail(userJson.get("parent-email").getAsString());
-                }
-                user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
+                String response = request.body();
+                JsonElement jelement = new JsonParser().parse(response);
+                JsonObject responseObject = jelement.getAsJsonObject();
 
-                return user;
-            } else {
-                // Authentication failed. Obtain result code
-                String message = responseObject.get("message").getAsString();
-                switch (responseObject.get("code").getAsInt()) {
-                    case 400:
-                        throw new UnknownUserException(login, message);
-                    case 410:
-                        // Wrong password, but we should report it as an
-                        // unknow username OR password to increase ambiguity
-                        LOG.info("Wrong password");
-                        throw new UnknownUserException(login, message);
-                    case 420:
-                        throw new UserBlockedException(message);
-                    case 430:
-                        throw new EmailNotConfirmedException(message);
-                    case 470:
-                        throw new InsufficientBucketTokensException();
-                    case 480:
-                        String authenticationSource = responseObject.get("data").getAsString();
-                        throw new WrongAuthenticationSourceException(authenticationSource);
+                if (responseObject.get("success").getAsBoolean()) {
+                    
+                    LOG.debug("Request was successful. Decoding user object");
+                    // Create and return a user object
+                    JsonObject userJson = responseObject.get("user").getAsJsonObject();
+
+                    User user = new User();
+                    user.setId(userJson.get("id").getAsLong());
+                    user.setEmail(userJson.get("email").getAsString());
+                    user.setLocale(userJson.get("locale").getAsString());
+                    user.setScreenname(userJson.get("screenname").getAsString());
+                    user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
+                
+                    // These dates might be zero for grandfathered accounts
+                    user.setBirthMonth(userJson.get("bdmonth").getAsInt());
+                    user.setBirthYear(userJson.get("bdyear").getAsInt());
+                
+                    // This gets stored as a Null if the sponsor address is not supplied
+                    if (userJson.get("parent-email").isJsonNull()) {
+                        user.setCoachEmail("");
+                    }
+                    else {
+                        user.setCoachEmail(userJson.get("parent-email").getAsString());
+                    }
+                    
+                    user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
+
+                    return user;
+                } else {
+                    // Authentication failed. Obtain result code
+                    String message = responseObject.get("message").getAsString();
+                    switch (responseObject.get("code").getAsInt()) {
+                        case 400:
+                            throw new UnknownUserException(login, message);
+                        case 410:
+                            // Wrong password, but we should report it as an
+                            // unknow username OR password to increase ambiguity
+                            LOG.info("Wrong password");
+                            throw new UnknownUserException(login, message);
+                        case 420:
+                            throw new UserBlockedException(message);
+                        case 430:
+                            throw new EmailNotConfirmedException(message);
+                        case 470:
+                            throw new InsufficientBucketTokensException();
+                        case 480:
+                            String authenticationSource = responseObject.get("data").getAsString();
+                            throw new WrongAuthenticationSourceException(authenticationSource);
+                    }
+                    
+                    LOG.warn("Unexpected error: {}", response);
+                    return null;
                 }
-                LOG.warn("Unexpected error: {}", response);
-                return null;
             }
+            else {
+                LOG.error("Server returned error code {}", request.code());
+                // Encountered a server error
+                throw new ServerException(request.message());
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
@@ -161,8 +176,6 @@ public class CloudSessionAuthenticateService {
             LOG.error("Json syntax error", jse);
             throw new ServerException(jse);
         }
-        
-        return null;
     }
 
     /**
