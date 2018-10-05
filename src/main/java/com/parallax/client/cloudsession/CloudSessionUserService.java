@@ -29,35 +29,61 @@ import org.slf4j.LoggerFactory;
 public class CloudSessionUserService {
 
     /**
-     * 
+     * Instance of the application logging facility
      */
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionUserService.class);
-    
+
     /**
-     * 
+     * The root component of the Cloud Session REST service URL
      */
     private final String BASE_URL;
 
     /**
      *
      * @param baseUrl
+     * The root component of the Cloud Session REST service URL
      */
     public CloudSessionUserService(String baseUrl) {
         this.BASE_URL = baseUrl;
     }
 
-
     /**
      * Retrieve a user record with a matching email address
      * 
      * @param email
+     * The email address associated with the user account
+     *
      * @return
+     * Returns a valid, populated User object
+     *
      * @throws UnknownUserException
+     *
      * @throws ServerException
      */
-    public User getUser(String email) throws UnknownUserException, ServerException {
+    public User getUser(String email)
+            throws UnknownUserException, ServerException {
+
         try {
-            HttpRequest request = HttpRequest.get(getUrl("/user/email/" + email));
+            LOG.info("Sending request to CS: {}", getUrl("/user/email/"));
+
+            // Place a request to the cloud session service. Trap any response
+            // that indicates an error
+            HttpRequest request;
+
+            try {
+                request = HttpRequest.get(getUrl("/user/email/" + email));
+
+                LOG.info("Request response code: {}", request.code());
+
+                if (!request.ok()) {
+                    LOG.error("Error contacting cloud session service: {}", request.code());
+                    throw new ServerException(String.format("Response code {} returned.", request.code()));
+                }
+            } catch (HttpRequest.HttpRequestException hex) {
+                LOG.warn("REST service request failed. The reported error is: {}", hex.getMessage());
+                throw new ServerException(hex);
+            }
+
             String response = request.body();
             JsonElement jelement = new JsonParser().parse(response);
             JsonObject responseObject = jelement.getAsJsonObject();
