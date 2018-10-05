@@ -60,6 +60,7 @@ public class CloudSessionAuthenticateService {
      * @param baseUrl The cloud session URL as defined in the
      *                blocklyprop.properties file
      */
+
     public CloudSessionAuthenticateService(String server, String baseUrl) {
         this.SERVER = server;
         this.BASE_URL = baseUrl;
@@ -132,8 +133,8 @@ public class CloudSessionAuthenticateService {
             if (responseObject.get("success").getAsBoolean()) {
                 // Create and return a user object
                 JsonObject userJson = responseObject.get("user").getAsJsonObject();
-                User user = new User();
 
+                User user = new User();
                 user.setId(userJson.get("id").getAsLong());
                 user.setEmail(userJson.get("email").getAsString());
                 user.setLocale(userJson.get("locale").getAsString());

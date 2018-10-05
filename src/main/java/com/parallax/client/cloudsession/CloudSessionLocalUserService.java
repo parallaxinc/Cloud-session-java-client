@@ -64,7 +64,7 @@ public class CloudSessionLocalUserService {
     
     // REST endpoint URI constants
     private final String URI_PASSWORD_RESET = "/local/reset/";
-    private final String URI_CONFIRM_ACCOUNT = "/local/confirm/";
+    private final String URI_CONFIRM_ACCOUNT = "/local/confirm";
     private final String URI_PASSWORD_SET = "/local/password/";
 
     /**
@@ -98,12 +98,12 @@ public class CloudSessionLocalUserService {
             String token, 
             String email, 
             String password, 
-            String passwordConfirm)
-                throws UnknownUserException, 
-                       PasswordVerifyException, 
-                       PasswordComplexityException, 
-                       WrongAuthenticationSourceException, 
-                       ServerException {
+            String passwordConfirm) throws 
+                    UnknownUserException, 
+                    PasswordVerifyException, 
+                    PasswordComplexityException, 
+                    WrongAuthenticationSourceException, 
+                    ServerException {
 
         try {
             // Create a key-value pair structure to send to the endpoint
@@ -116,32 +116,30 @@ public class CloudSessionLocalUserService {
             HttpRequest request = HttpRequest.post(
                     getUrl(URI_PASSWORD_RESET + email)).form(data);
 
-            // Get response from Cloud Session server
-            String response = request.body();
-            if (response == null) {
-                throw new ServerException("No response from server.");
-            }
+            if (request.ok()) {
+                // Get response from Cloud Session server
+                String response = request.body();
+                JsonElement jelement = new JsonParser().parse(response);
+                JsonObject responseObject = jelement.getAsJsonObject();
 
-            JsonElement jelement = new JsonParser().parse(response);
-            JsonObject responseObject = jelement.getAsJsonObject();
-
-            if (responseObject.get("success").getAsBoolean()) {
-                return true;
-            } 
-            else {
-                switch (responseObject.get("code").getAsInt()) {
-                    case 400:
-                        throw new UnknownUserException(
-                                responseObject.get("data").getAsString());
-                    case 460:
-                        throw new PasswordVerifyException();
-                    case 490:
-                        throw new PasswordComplexityException();
-                    case 480:
-                        throw new WrongAuthenticationSourceException(
-                                responseObject.get("data").getAsString());
+                if (responseObject.get("success").getAsBoolean()) {
+                    return true;
+                } 
+                else {
+                    switch (responseObject.get("code").getAsInt()) {
+                        case 400:
+                            throw new UnknownUserException(
+                                    responseObject.get("data").getAsString());
+                        case 460:
+                            throw new PasswordVerifyException();
+                        case 490:
+                            throw new PasswordComplexityException();
+                        case 480:
+                            throw new WrongAuthenticationSourceException(
+                                    responseObject.get("data").getAsString());
+                    }
+                    return false;
                 }
-                return false;
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
@@ -151,6 +149,8 @@ public class CloudSessionLocalUserService {
             LOG.error("Json syntace service error", jse);
             throw new ServerException(jse);
         }
+        
+        return false;
     }
 
     /**
@@ -172,32 +172,30 @@ public class CloudSessionLocalUserService {
             HttpRequest request = HttpRequest.get(
                     getUrl(URI_PASSWORD_RESET + email)).header("server", SERVER);
 
-            // Get response from Cloud Session server
-            String response = request.body();
-            if (response == null) {
-                throw new ServerException("No response from server.");
-            }
+            if (request.ok()) {
+                // Get response from Cloud Session server
+                String response = request.body();
+                JsonElement jelement = new JsonParser().parse(response);
+                JsonObject responseObject = jelement.getAsJsonObject();
 
-            JsonElement jelement = new JsonParser().parse(response);
-            JsonObject responseObject = jelement.getAsJsonObject();
-
-            if (responseObject.get("success").getAsBoolean()) {
-                return true;
-            } 
-            else {
-                switch (responseObject.get("code").getAsInt()) {
-                    case 400:
-                        throw new UnknownUserException(
-                                responseObject.get("data").getAsString());
-                    case 470:
-                        throw new InsufficientBucketTokensException(
-                                responseObject.get("message").getAsString(),
-                                responseObject.get("data").getAsString());
-                    case 480:
-                        throw new WrongAuthenticationSourceException(
-                                responseObject.get("data").getAsString());
+                if (responseObject.get("success").getAsBoolean()) {
+                    return true;
+                } 
+                else {
+                    switch (responseObject.get("code").getAsInt()) {
+                        case 400:
+                            throw new UnknownUserException(
+                                    responseObject.get("data").getAsString());
+                        case 470:
+                            throw new InsufficientBucketTokensException(
+                                    responseObject.get("message").getAsString(),
+                                    responseObject.get("data").getAsString());
+                        case 480:
+                            throw new WrongAuthenticationSourceException(
+                                    responseObject.get("data").getAsString());
+                    }
+                    return false;
                 }
-                return false;
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
@@ -211,6 +209,8 @@ public class CloudSessionLocalUserService {
             LOG.error("Encountered a Null Pointer exception.");
             throw new ServerException(npe);
         }
+        
+        return false;
     }
 
     /**
@@ -226,49 +226,55 @@ public class CloudSessionLocalUserService {
             throws UnknownUserException, 
                    WrongAuthenticationSourceException, 
                    ServerException {
+
+        String response = null;
+        String cloudSessionUri = null;
         
         try {
             Map<String, String> data = new HashMap<>();
             data.put("email", email);
             data.put("token", token);
             
-            HttpRequest request = HttpRequest.post(
-                    getUrl(URI_CONFIRM_ACCOUNT)).form(data);
-
-            // Get response from Cloud Session server
-            String response = request.body();
-            if (response == null) {
-                throw new ServerException("No response from server.");
-            }
-
-            JsonElement jelement = new JsonParser().parse(response);
-            JsonObject responseObject = jelement.getAsJsonObject();
+            cloudSessionUri = getUrl(URI_CONFIRM_ACCOUNT);
             
-            if (responseObject.get("success").getAsBoolean()) {
-                return true;
-            } 
-            else {
-                switch (responseObject.get("code").getAsInt()) {
-                    case 400:
-                        throw new UnknownUserException(
-                                responseObject.get("data").getAsString());
-                    case 480:
-                        throw new WrongAuthenticationSourceException(
-                                responseObject.get("data").getAsString());
-                    case 510:
-                        // The submitted token has expired or was not found 
-                        return false;
+            LOG.info("Requesting from Cloud Session server: '{}'", cloudSessionUri);
+
+            HttpRequest request = HttpRequest.post(cloudSessionUri).form(data);
+
+            if (request.ok()) {
+                // Get response from Cloud Session server
+                response = request.body();
+                JsonElement jelement = new JsonParser().parse(response);
+                JsonObject responseObject = jelement.getAsJsonObject();
+            
+                if (responseObject.get("success").getAsBoolean()) {
+                    return true;
+                } 
+                else {
+                    switch (responseObject.get("code").getAsInt()) {
+                        case 400:
+                            throw new UnknownUserException(
+                                    responseObject.get("data").getAsString());
+                        case 480:
+                            throw new WrongAuthenticationSourceException(
+                                    responseObject.get("data").getAsString());
+                        case 510:
+                            // The submitted token has expired or was not found 
+                            return false;
+                    }
+                    return false;
                 }
-                return false;
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
             
         } catch (JsonSyntaxException jse) {
-            LOG.error("Json syntace service error", jse);
+            LOG.error("Json syntax error", jse.getMessage());
             throw new ServerException(jse);
         }
+        
+        return false;
     }
 
     /**
@@ -290,45 +296,45 @@ public class CloudSessionLocalUserService {
         
         try {
             HttpRequest request = HttpRequest.get(
-                    getUrl(URI_CONFIRM_ACCOUNT + email)).header("server", SERVER);
+                    getUrl(URI_CONFIRM_ACCOUNT + "/" + email)).header("server", SERVER);
 
-            // Get response from Cloud Session server
-            String response = request.body();
-            if (response == null) {
-                throw new ServerException("No response from server.");
-            }
+            if (request.ok()) {
+                // Get response from Cloud Session server
+                String response = request.body();
+                JsonElement jelement = new JsonParser().parse(response);
+                JsonObject responseObject = jelement.getAsJsonObject();
 
-            JsonElement jelement = new JsonParser().parse(response);
-            JsonObject responseObject = jelement.getAsJsonObject();
-
-            if (responseObject.get("success").getAsBoolean()) {
-                return true;
-            } 
-            else {
-                switch (responseObject.get("code").getAsInt()) {
-                    case 400:
-                        throw new UnknownUserException(
-                                responseObject.get("data").getAsString());
-                    case 470:
-                        throw new InsufficientBucketTokensException(
-                                responseObject.get("message").getAsString(), 
-                                responseObject.get("data").getAsString());
-                    case 480:
-                        throw new WrongAuthenticationSourceException(
-                                responseObject.get("data").getAsString());
-                    case 520:
-                        throw new EmailAlreadyConfirmedException(
-                                responseObject.get("message").getAsString());
-                    case 540:
-                        throw new ServerException (
-                                responseObject.get("message").getAsString());
+                if (responseObject.get("success").getAsBoolean()) {
+                    return true;
+                } 
+                else {
+                    switch (responseObject.get("code").getAsInt()) {
+                        case 400:
+                            throw new UnknownUserException(
+                                    responseObject.get("data").getAsString());
+                        case 470:
+                            throw new InsufficientBucketTokensException(
+                                    responseObject.get("message").getAsString(), 
+                                    responseObject.get("data").getAsString());
+                        case 480:
+                            throw new WrongAuthenticationSourceException(
+                                    responseObject.get("data").getAsString());
+                        case 520:
+                            throw new EmailAlreadyConfirmedException(
+                                    responseObject.get("message").getAsString());
+                        case 540:
+                            throw new ServerException (
+                                    responseObject.get("message").getAsString());
+                    }
+                    return false;
                 }
-                return false;
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         }
+        
+        return false;
     }
 
     /**
@@ -364,40 +370,40 @@ public class CloudSessionLocalUserService {
             HttpRequest request = HttpRequest.post(
                     getUrl(URI_PASSWORD_SET + idUser)).form(data);
 
-            // Get response from Cloud Session server
-            String response = request.body();
-            if (response == null) {
-                throw new ServerException("No response from server.");
-            }
+            if (request.ok()) {
+                // Get response from Cloud Session server
+                String response = request.body();
+                JsonElement jelement = new JsonParser().parse(response);
+                JsonObject responseObject = jelement.getAsJsonObject();
 
-            JsonElement jelement = new JsonParser().parse(response);
-            JsonObject responseObject = jelement.getAsJsonObject();
-
-            if (responseObject.get("success").getAsBoolean()) {
-                return true;
-            } 
-            else {
-                switch (responseObject.get("code").getAsInt()) {
-                    case 400:
-                        throw new UnknownUserIdException(
-                                responseObject.get("data").getAsString());
-                    case 460:
-                        throw new PasswordVerifyException();
-                    case 480:
-                        throw new WrongAuthenticationSourceException(
-                                responseObject.get("data").getAsString());
-                    case 490:
-                        throw new PasswordComplexityException();
-                    case 510:
-                        // The submitted token has expired or was not found 
-                        return false;
+                if (responseObject.get("success").getAsBoolean()) {
+                    return true;
+                } 
+                else {
+                    switch (responseObject.get("code").getAsInt()) {
+                        case 400:
+                            throw new UnknownUserIdException(
+                                    responseObject.get("data").getAsString());
+                        case 460:
+                            throw new PasswordVerifyException();
+                        case 480:
+                            throw new WrongAuthenticationSourceException(
+                                    responseObject.get("data").getAsString());
+                        case 490:
+                            throw new PasswordComplexityException();
+                        case 510:
+                            // The submitted token has expired or was not found 
+                            return false;
+                    }
+                    return false;
                 }
-                return false;
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
             throw new ServerException(hre);
         }
+        
+        return false;
     }
 
     // Helper function to build a complete URL
