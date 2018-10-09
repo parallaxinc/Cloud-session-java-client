@@ -10,14 +10,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import com.parallax.client.cloudsession.exceptions.EmailAlreadyConfirmedException;
-import com.parallax.client.cloudsession.exceptions.InsufficientBucketTokensException;
-import com.parallax.client.cloudsession.exceptions.PasswordComplexityException;
-import com.parallax.client.cloudsession.exceptions.PasswordVerifyException;
-import com.parallax.client.cloudsession.exceptions.ServerException;
-import com.parallax.client.cloudsession.exceptions.UnknownUserException;
-import com.parallax.client.cloudsession.exceptions.UnknownUserIdException;
-import com.parallax.client.cloudsession.exceptions.WrongAuthenticationSourceException;
+import com.parallax.client.cloudsession.exceptions.*;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -165,7 +159,8 @@ public class CloudSessionLocalUserService {
     public boolean requestPasswordReset(String email) 
             throws UnknownUserException, 
                    InsufficientBucketTokensException, 
-                   WrongAuthenticationSourceException, 
+                   WrongAuthenticationSourceException,
+                   EmailNotConfirmedException,
                    ServerException {
         
         try {
@@ -185,6 +180,9 @@ public class CloudSessionLocalUserService {
                     switch (responseObject.get("code").getAsInt()) {
                         case 400:
                             throw new UnknownUserException(
+                                    responseObject.get("data").getAsString());
+                        case 402:
+                            throw new EmailNotConfirmedException(
                                     responseObject.get("data").getAsString());
                         case 470:
                             throw new InsufficientBucketTokensException(
