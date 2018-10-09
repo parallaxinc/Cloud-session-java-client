@@ -34,13 +34,12 @@ public class CloudSessionUserService {
 
     
     /**
-     * 
+     * Instance of the application logging facility
      */
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionUserService.class);
-    
-    
+
     /**
-     * A string that provides the 'protocol://host.example.com'
+     * The root component of the Cloud Session REST service URL
      */
     private final String BASE_URL;
 
@@ -49,50 +48,67 @@ public class CloudSessionUserService {
     /**
      *
      * @param baseUrl
+     * The root component of the Cloud Session REST service URL
      */
     public CloudSessionUserService(String baseUrl) {
         this.BASE_URL = baseUrl;
     }
 
-
     /**
      * Retrieve a user record with a matching email address
      * 
      * @param email
+     * The email address associated with the user account
+     *
      * @return
+     * Returns a valid, populated User object
+     *
      * @throws UnknownUserException
+     *
      * @throws ServerException
      */
-    public User getUser(String email) throws UnknownUserException, ServerException {
-        
-        LOG.debug("Contacting endpoint '/user/email/{email}");
-        
-        try {
-            HttpRequest request = HttpRequest.get(getUrl("/user/email/" + email));
-            
-            if (request.ok()) {
-                // Process the JSON response message
-                String response = request.body();
-                JsonElement jelement = new JsonParser().parse(response);
-                JsonObject responseObject = jelement.getAsJsonObject();
+    public User getUser(String email)
+            throws UnknownUserException, ServerException {
 
-                // Verify that the we have a 'success' message
-                if (responseObject.get("success").getAsBoolean()) {
-                    JsonObject userJson = responseObject.get("user").getAsJsonObject();
-                    return populateUser(userJson);
-                } else {
-                    // Parse the embedded error message
-                    String message = responseObject.get("message").getAsString();
-                    switch (responseObject.get("code").getAsInt()) {
-                        case 400:
-                            throw new UnknownUserException(email, message);
-                        default:
-                            throw new ServerException("Unknown response code.");
-                    }
+        try {
+            LOG.info("Sending request to CS: {}", getUrl("/user/email/"));
+
+            // Place a request to the cloud session service. Trap any response
+            // that indicates an error
+            HttpRequest request;
+
+            try {
+                request = HttpRequest.get(getUrl("/user/email/" + email));
+
+                LOG.info("Request response code: {}", request.code());
+
+                if (!request.ok()) {
+                    LOG.error("Error contacting cloud session service: {}", request.code());
+                    throw new ServerException(String.format("Response code {} returned.", request.code()));
                 }
+            } catch (HttpRequest.HttpRequestException hex) {
+                LOG.warn("REST service request failed. The reported error is: {}", hex.getMessage());
+                throw new ServerException(hex);
+            }
+
+            String response = request.body();
+
+            JsonElement jelement = new JsonParser().parse(response);
+            JsonObject responseObject = jelement.getAsJsonObject();
+
+            // Verify that the we have a 'success' message
+            if (responseObject.get("success").getAsBoolean()) {
+                JsonObject userJson = responseObject.get("user").getAsJsonObject();
+                return populateUser(userJson);
             } else {
-                LOG.error("Unable to contact Cloud Session endpoint '/user/email/', Code: {}", request.code());
-                return null;
+                // Parse the embedded error message
+                String message = responseObject.get("message").getAsString();
+                switch (responseObject.get("code").getAsInt()) {
+                    case 400:
+                        throw new UnknownUserException(email, message);
+                    default:
+                        throw new ServerException("Unknown response code.");
+                }
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
