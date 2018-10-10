@@ -85,7 +85,8 @@ public class CloudSessionAuthenticateService {
                 InsufficientBucketTokensException, 
                 WrongAuthenticationSourceException, 
                 ServerException {
-        
+
+        JsonObject responseObject = null;
 
         try {
             Map<String, String> data = new HashMap<>();
@@ -101,14 +102,16 @@ public class CloudSessionAuthenticateService {
                     .form(data);
 
             LOG.debug("Return from endpoint call");
+
+            String response = request.body();
+            JsonElement jelement = new JsonParser().parse(response);
+            responseObject = jelement.getAsJsonObject();
+            
+            LOG.info("Server response code is: {}", request.code());
             
             if (request.ok()) {
-                
+                // The service returned an HTTP 200 code
                 LOG.debug("Request returned OK");
-                
-                String response = request.body();
-                JsonElement jelement = new JsonParser().parse(response);
-                JsonObject responseObject = jelement.getAsJsonObject();
 
                 if (responseObject.get("success").getAsBoolean()) {
                     
@@ -138,33 +141,35 @@ public class CloudSessionAuthenticateService {
                     user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
 
                     return user;
-                } else {
-                    // Authentication failed. Obtain result code
-                    String message = responseObject.get("message").getAsString();
-                    switch (responseObject.get("code").getAsInt()) {
-                        case 400:
-                            throw new UnknownUserException(login, message);
-                        case 410:
-                            // Wrong password, but we should report it as an
-                            // unknow username OR password to increase ambiguity
-                            LOG.info("Wrong password");
-                            throw new UnknownUserException(login, message);
-                        case 420:
-                            throw new UserBlockedException(message);
-                        case 430:
-                            throw new EmailNotConfirmedException(message);
-                        case 470:
-                            throw new InsufficientBucketTokensException();
-                        case 480:
-                            String authenticationSource = responseObject.get("data").getAsString();
-                            throw new WrongAuthenticationSourceException(authenticationSource);
-                    }
-                    
-                    LOG.warn("Unexpected error: {}", response);
-                    return null;
                 }
             }
-            else {
+            
+            if (request.code() == 401) {
+                
+                LOG.info("Server returned a status 401. Detail code is: {}",responseObject.get("code"));
+                
+                // Authentication failed. Obtain result code
+                String message = responseObject.get("message").getAsString();
+                
+                switch (responseObject.get("code").getAsInt()) {
+                    case 400:
+                        throw new UnknownUserException(login, message);
+                    case 410:
+                        // Wrong password, but we should report it as an
+                        // unknow username OR password to increase ambiguity
+                        LOG.info("Wrong password");
+                        throw new UnknownUserException(login, message);
+                    case 420:
+                        throw new UserBlockedException(message);
+                    case 430:
+                        throw new EmailNotConfirmedException(message);
+                    case 470:
+                        throw new InsufficientBucketTokensException();
+                    case 480:
+                        String authenticationSource = responseObject.get("data").getAsString();
+                        throw new WrongAuthenticationSourceException(authenticationSource);
+                }
+                    
                 LOG.error("Server returned error code {}", request.code());
                 // Encountered a server error
                 throw new ServerException(request.message());
@@ -176,7 +181,9 @@ public class CloudSessionAuthenticateService {
             LOG.error("Json syntax error", jse);
             throw new ServerException(jse);
         }
-    }
+        
+        return null;
+    }   
 
     /**
      * Prepend the base url to the action url
