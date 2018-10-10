@@ -9,7 +9,7 @@ Valid logging levels: TRACE, DEBUG, INFO, WARN and ERROR
 -->
 <configuration>
     <!-- Log file destinations are defined here -->
-    <property name="APP_LOG_PATH" value="/var/log/tomcat8"/>
+    <property name="APP_LOG_PATH" value="${catalina.home}/logs"/>
     <property name="APP_LOG_FILE_BASE" value="blockly-cs"/>
     
     <appender name="file" class="ch.qos.logback.core.FileAppender">
@@ -32,7 +32,7 @@ Valid logging levels: TRACE, DEBUG, INFO, WARN and ERROR
         </layout>
     </appender>
 
-    <root level="debug">
+    <root level="info">
         <appender-ref ref="file" />
     </root>
 </configuration>
