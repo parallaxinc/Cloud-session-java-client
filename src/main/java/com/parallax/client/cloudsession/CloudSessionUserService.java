@@ -10,6 +10,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import com.parallax.client.cloudsession.exceptions.EmailNotConfirmedException;
 import com.parallax.client.cloudsession.exceptions.ScreennameUsedException;
 import com.parallax.client.cloudsession.exceptions.ServerException;
 import com.parallax.client.cloudsession.exceptions.UnknownUserException;
@@ -162,24 +163,36 @@ public class CloudSessionUserService {
      * @throws UnknownUserIdException
      * @throws ServerException
      */
-    public User getUser(Long idUser) throws UnknownUserIdException, ServerException {
+    public User getUser(Long idUser) throws 
+            UnknownUserIdException,
+            ServerException,
+            EmailNotConfirmedException {
 
-        LOG.debug("Contacting endpoint '/user/id/{uid}");
+        LOG.info("Contacting endpoint '/user/id/{uid}");
         
         try {
             HttpRequest request = HttpRequest.get(getUrl("/user/id/" + idUser));
             
             if (request.ok()) {
+                LOG.info("Endpoint reports success: {}", request.body());
+                        ;
                 String response = request.body();
                 JsonElement jelement = new JsonParser().parse(response);
                 JsonObject responseObject = jelement.getAsJsonObject();
                 
                 if (responseObject.get("success").getAsBoolean()) {
+                    LOG.info("Payload reports success.");
                     JsonObject userJson = responseObject.get("user").getAsJsonObject();
                     return populateUser(userJson);
                 } else {
-                    if (responseObject.get("code").getAsInt() == 400) {
+                    LOG.error("Payload reports error code: {}", responseObject.get("code"));
+                    int resultCode = responseObject.get("code").getAsInt();
+                    
+                    if (resultCode == 400) {
                         throw new UnknownUserIdException(idUser);
+                    }
+                    else if (resultCode == 430) {
+                        throw new EmailNotConfirmedException("");
                     }
  
                     return null;

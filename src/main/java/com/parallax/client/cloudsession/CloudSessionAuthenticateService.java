@@ -85,13 +85,15 @@ public class CloudSessionAuthenticateService {
                 InsufficientBucketTokensException, 
                 WrongAuthenticationSourceException, 
                 ServerException {
-        
-        LOG.info("Contacting endpoint '/authenticate/local");
+
+        JsonObject responseObject = null;
 
         try {
             Map<String, String> data = new HashMap<>();
             data.put("email", login);
             data.put("password", password);
+    
+            LOG.debug("Contacting endpoint '/authenticate/local");
 
             // Issue POST request to attempt login
             HttpRequest request = HttpRequest
@@ -99,39 +101,56 @@ public class CloudSessionAuthenticateService {
                     .header("server", SERVER)
                     .form(data);
 
-            if (request.ok()) {
+            LOG.debug("Return from endpoint call");
+
             String response = request.body();
             JsonElement jelement = new JsonParser().parse(response);
-            JsonObject responseObject = jelement.getAsJsonObject();
+            responseObject = jelement.getAsJsonObject();
+            
+            LOG.info("Server response code is: {}", request.code());
+            
+            if (request.ok()) {
+                // The service returned an HTTP 200 code
+                LOG.debug("Request returned OK");
 
-            if (responseObject.get("success").getAsBoolean()) {
-                // Create and return a user object
-                JsonObject userJson = responseObject.get("user").getAsJsonObject();
+                if (responseObject.get("success").getAsBoolean()) {
+                    
+                    LOG.debug("Request was successful. Decoding user object");
+                    // Create and return a user object
+                    JsonObject userJson = responseObject.get("user").getAsJsonObject();
 
-                User user = new User();
-                user.setId(userJson.get("id").getAsLong());
-                user.setEmail(userJson.get("email").getAsString());
-                user.setLocale(userJson.get("locale").getAsString());
-                user.setScreenname(userJson.get("screenname").getAsString());
-                user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
+                    User user = new User();
+                    user.setId(userJson.get("id").getAsLong());
+                    user.setEmail(userJson.get("email").getAsString());
+                    user.setLocale(userJson.get("locale").getAsString());
+                    user.setScreenname(userJson.get("screenname").getAsString());
+                    user.setAuthenticationSource(userJson.get("authentication-source").getAsString());
                 
-                // These dates might be zero for grandfathered accounts
-                user.setBirthMonth(userJson.get("bdmonth").getAsInt());
-                user.setBirthYear(userJson.get("bdyear").getAsInt());
+                    // These dates might be zero for grandfathered accounts
+                    user.setBirthMonth(userJson.get("bdmonth").getAsInt());
+                    user.setBirthYear(userJson.get("bdyear").getAsInt());
                 
-                // This gets stored as a Null if the sponsor address is not supplied
-                if (userJson.get("parent-email").isJsonNull()) {
-                    user.setCoachEmail("");
-                }
-                else {
-                    user.setCoachEmail(userJson.get("parent-email").getAsString());
-                }
-                user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
+                    // This gets stored as a Null if the sponsor address is not supplied
+                    if (userJson.get("parent-email").isJsonNull()) {
+                        user.setCoachEmail("");
+                    }
+                    else {
+                        user.setCoachEmail(userJson.get("parent-email").getAsString());
+                    }
+                    
+                    user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
 
-                return user;
-            } else {
+                    return user;
+                }
+            }
+            
+            if (request.code() == 401) {
+                
+                LOG.info("Server returned a status 401. Detail code is: {}",responseObject.get("code"));
+                
                 // Authentication failed. Obtain result code
                 String message = responseObject.get("message").getAsString();
+                
                 switch (responseObject.get("code").getAsInt()) {
                     case 400:
                         throw new UnknownUserException(login, message);
@@ -150,9 +169,10 @@ public class CloudSessionAuthenticateService {
                         String authenticationSource = responseObject.get("data").getAsString();
                         throw new WrongAuthenticationSourceException(authenticationSource);
                 }
-                LOG.warn("Unexpected error: {}", response);
-                return null;
-            }
+                    
+                LOG.error("Server returned error code {}", request.code());
+                // Encountered a server error
+                throw new ServerException(request.message());
             }
         } catch (HttpRequest.HttpRequestException hre) {
             LOG.error("Inter service error", hre);
@@ -163,7 +183,7 @@ public class CloudSessionAuthenticateService {
         }
         
         return null;
-    }
+    }   
 
     /**
      * Prepend the base url to the action url
