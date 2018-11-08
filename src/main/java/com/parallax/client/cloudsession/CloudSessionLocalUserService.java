@@ -5,11 +5,6 @@
  */
 package com.parallax.client.cloudsession;
 
-import com.github.kevinsawicki.http.HttpRequest;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 import com.parallax.client.cloudsession.exceptions.EmailAlreadyConfirmedException;
 import com.parallax.client.cloudsession.exceptions.EmailNotConfirmedException;
 import com.parallax.client.cloudsession.exceptions.InsufficientBucketTokensException;
@@ -19,10 +14,23 @@ import com.parallax.client.cloudsession.exceptions.ServerException;
 import com.parallax.client.cloudsession.exceptions.UnknownUserException;
 import com.parallax.client.cloudsession.exceptions.UnknownUserIdException;
 import com.parallax.client.cloudsession.exceptions.WrongAuthenticationSourceException;
+
+import com.github.kevinsawicki.http.HttpRequest;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+
 import java.util.HashMap;
 import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
+
+
 
 /**
  * Interface to the Cloud Session server
@@ -49,7 +57,6 @@ public class CloudSessionLocalUserService {
      * Application logging facility
      */
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionLocalUserService.class);
-    
     
     /**
      * The local user services REST base URL
@@ -87,6 +94,7 @@ public class CloudSessionLocalUserService {
         this.SERVER = server;
         this.BASE_URL = baseUrl;
     }
+
 
     /**
      * Reset an account password
