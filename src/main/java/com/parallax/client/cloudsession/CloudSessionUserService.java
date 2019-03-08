@@ -74,13 +74,16 @@ public class CloudSessionUserService {
      * @param email
      * is the unique email address of the user profile to retrieve
      *
-     * @return
-     * @throws UnknownUserException
+     * @return a populated Cloud Session User object if successful
+     *
+     * @throws UnknownUserException if the provided email address was not found
+     *
      * @throws ServerException
+     *      if an unexpected error occurs while obtaining the requested user profile.
      */
     public User getUser(String email) throws UnknownUserException, ServerException {
         
-        LOG.info("Contacting endpoint '/user/email/{email}");
+        LOG.info("Contacting CloudSession endpoint GET '/user/email/");
         
         try {
             HttpRequest request = HttpRequest.get(getUrl("/user/email/" + email));
@@ -88,8 +91,8 @@ public class CloudSessionUserService {
             if (request.ok()) {
                 // Process the JSON response message
                 String response = request.body();
-                JsonElement jelement = new JsonParser().parse(response);
-                JsonObject responseObject = jelement.getAsJsonObject();
+                JsonElement jsonElement = new JsonParser().parse(response);
+                JsonObject responseObject = jsonElement.getAsJsonObject();
 
                 // Verify that the we have a 'success' message
                 if (responseObject.get("success").getAsBoolean()) {
@@ -98,12 +101,11 @@ public class CloudSessionUserService {
                 } else {
                     // Parse the embedded error message
                     String message = responseObject.get("message").getAsString();
-                    switch (responseObject.get("code").getAsInt()) {
-                        case 400:
-                            throw new UnknownUserException(email, message);
-                        default:
-                            throw new ServerException("Unknown response code.");
+
+                    if (responseObject.get("code").getAsInt() == 400) {
+                        throw new UnknownUserException(email, message);
                     }
+                    throw new ServerException("Unknown response code.");
                 }
             } else {
                 LOG.error("Unable to contact Cloud Session endpoint '/user/email/', Code: {}", request.code());
@@ -127,10 +129,15 @@ public class CloudSessionUserService {
     /**
      * Retrieve a user record with a matching screen name
      * 
-     * @param screenName
-     * @return
+     * @param screenName is the user profile screen name
+     *
+     * @return  a fully populated Cloud Session User object if successful
+     *
      * @throws UnknownUserException
+     *      when the user scree name cannot be found
+     *
      * @throws ServerException
+     *      when an unexpected error occurs
      */
     @Deprecated
     public User getUserByScreenname(String screenName) throws UnknownUserException, ServerException {
@@ -173,10 +180,15 @@ public class CloudSessionUserService {
     /**
      * Retrieve a user record from the user ID key
      * 
-     * @param idUser
-     * @return
+     * @param idUser Primary key id of the user profile
+     *
+     * @return a fully populated Cloud Session User object if successful
+     *
      * @throws UnknownUserIdException
+     *      when a user profile matching the submitted user id cannot be found
+     *
      * @throws ServerException
+     *      when an unexpected error occurs
      */
     public User getUser(Long idUser) throws 
             UnknownUserIdException,
@@ -232,12 +244,20 @@ public class CloudSessionUserService {
     /**
      * Set user screen name on user record keyed on the user ID
      * 
-     * @param idUser
-     * @param screenname
-     * @return
+     * @param idUser Primary key id of the user profile
+     *
+     * @param screenname is the user profile screen name
+     *
+     * @return a fully populated Cloud Session User object if successful
+     *
      * @throws UnknownUserIdException
+     *      when a user profile matching the submitted user id cannot be found
+     *
      * @throws ScreennameUsedException
+     *      when the submitted screen name has already been used by another user profile
+     *
      * @throws ServerException
+     *      when an unexpected error occurs
      */
     public User changeUserInfo(Long idUser, String screenname)
             throws UnknownUserIdException, ScreennameUsedException, ServerException {
@@ -286,11 +306,17 @@ public class CloudSessionUserService {
     /**
      * Update the locale on the user record keyed on the user ID
      * 
-     * @param idUser
-     * @param locale
-     * @return
+     * @param idUser Primary key id of the user profile
+     *
+     * @param locale is the user's language assignment
+     *
+     * @return a fully populated Cloud Session User object if successful
+     *
      * @throws UnknownUserIdException
+     *      when a user profile matching the submitted user id cannot be found
+     *
      * @throws ServerException
+     *      when an unexpected error occurs
      */
     public User changeUserLocale(Long idUser, String locale) throws UnknownUserIdException, ServerException {
 
@@ -313,9 +339,8 @@ public class CloudSessionUserService {
                     return populateUser(userJson);
                 } else {
                     String message = responseObject.get("message").getAsString();
-                    switch (responseObject.get("code").getAsInt()) {
-                        case 400:
-                            throw new UnknownUserIdException(idUser, message);
+                    if (responseObject.get("code").getAsInt() == 400) {
+                        throw new UnknownUserIdException(idUser, message);
                     }
                     
                     return null;
