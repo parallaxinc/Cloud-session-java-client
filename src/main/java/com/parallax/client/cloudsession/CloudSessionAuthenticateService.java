@@ -1,8 +1,24 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (c) 2019 Parallax Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the “Software”), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
+
 package com.parallax.client.cloudsession;
 
 import com.github.kevinsawicki.http.HttpRequest;
@@ -34,21 +50,13 @@ import org.slf4j.LoggerFactory;
  */
 public class CloudSessionAuthenticateService {
 
-    /**
-     * Handle for any logging activity
-     */
+    // Handle for any logging activity
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionAuthenticateService.class);
-    
-    
-    /**
-     * Base URL use to obtain authentication service.
-     */
+
+    // Base URL use to obtain authentication service.
     private final String BASE_URL;
     
-    
-    /**
-     * Host name
-     */
+    //Host name
     private final String SERVER;
 
     /**
@@ -67,15 +75,32 @@ public class CloudSessionAuthenticateService {
     /**
      * Authenticate user from local authentication database
      * 
-     * @param login
-     * @param password
-     * @return
-     * @throws UnknownUserException
-     * @throws UserBlockedException
-     * @throws EmailNotConfirmedException
+     * @param login is the user email address
+     * @param password is the password entered for the login attempt
+     *
+     * @return a User object if successful, otherwise return null
+     *
+     * @throws UnknownUserException is thrown when the user email address is not found
+     *
+     * @throws UserBlockedException is an exception thrown when the requested user
+     *                              account is blockled
+     *
+     * @throws EmailNotConfirmedException is thrown when the requested account is pending
+     *                                    email verification
+     *
      * @throws InsufficientBucketTokensException
+     *      is thrown when the requested activity has occurred too many times within
+     *      a specified period of time.
+     *
      * @throws WrongAuthenticationSourceException
+     *      is thrown when the login attempt is using local authentication when the account
+     *      has been set up to use OAuth or when the login attempt is using OAuth when the
+     *      account was set up for local authentication
+     *
      * @throws ServerException
+     *      is thrown when something really bad happens. Think environment or failed access
+     *      to the Cloud Session server
+     *
      */
     public User authenticateLocalUser(String login, String password) 
             throws
@@ -86,18 +111,18 @@ public class CloudSessionAuthenticateService {
                 WrongAuthenticationSourceException, 
                 ServerException {
 
-        JsonObject responseObject = null;
+        JsonObject responseObject;
 
         try {
             Map<String, String> data = new HashMap<>();
             data.put("email", login);
             data.put("password", password);
     
-            LOG.debug("Contacting endpoint '/authenticate/local");
+            LOG.info("Contacting endpoint {}", BASE_URL + "/authenticate/local");
 
             // Issue POST request to attempt login
             HttpRequest request = HttpRequest
-                    .post(getUrl("/authenticate/local"))
+                    .post(BASE_URL + "/authenticate/local")
                     .header("server", SERVER)
                     .form(data);
 
@@ -119,7 +144,9 @@ public class CloudSessionAuthenticateService {
                     // Create and return a user object
                     JsonObject userJson = responseObject.get("user").getAsJsonObject();
 
+                    // Create a new cloud session user object
                     User user = new User();
+
                     user.setId(userJson.get("id").getAsLong());
                     user.setEmail(userJson.get("email").getAsString());
                     user.setLocale(userJson.get("locale").getAsString());
@@ -184,14 +211,4 @@ public class CloudSessionAuthenticateService {
         
         return null;
     }   
-
-    /**
-     * Prepend the base url to the action url
-     * 
-     * @param actionUrl
-     * @return 
-     */
-    private String getUrl(String actionUrl) {
-        return BASE_URL + actionUrl;
-    }
 }
