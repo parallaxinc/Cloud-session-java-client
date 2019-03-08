@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019 Parallax Inc.
  *
@@ -50,23 +49,19 @@ import org.slf4j.LoggerFactory;
  */
 public class CloudSessionUserService {
 
-    
-    /**
-     * 
-     */
+    // Create an instance of the application logger
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionUserService.class);
     
     
-    /**
-     * A string that provides the 'protocol://host.example.com'
-     */
+    // A string that provides the 'protocol://host.example.com'
     private final String BASE_URL;
 
     
     
     /**
+     * Init the static base URL
      *
-     * @param baseUrl
+     * @param baseUrl defines the URL to use in this setting
      */
     public CloudSessionUserService(String baseUrl) {
         this.BASE_URL = baseUrl;
@@ -132,22 +127,23 @@ public class CloudSessionUserService {
     /**
      * Retrieve a user record with a matching screen name
      * 
-     * @param screenname
+     * @param screenName
      * @return
      * @throws UnknownUserException
      * @throws ServerException
      */
-    public User getUserByScreenname(String screenname) throws UnknownUserException, ServerException {
+    @Deprecated
+    public User getUserByScreenname(String screenName) throws UnknownUserException, ServerException {
         
-        LOG.debug("Contacting endpoint '/user/screenname/{name}");
+        LOG.debug("Contacting endpoint '/user/screenname/{name}", screenName);
 
         try {
-            HttpRequest request = HttpRequest.get(getUrl("/user/screenname/" + screenname));
+            HttpRequest request = HttpRequest.get(getUrl("/user/screenname/" + screenName));
             
             if (request.ok()) {
                 String response = request.body();
-                JsonElement jelement = new JsonParser().parse(response);
-                JsonObject responseObject = jelement.getAsJsonObject();
+                JsonElement jsonElement = new JsonParser().parse(response);
+                JsonObject responseObject = jsonElement.getAsJsonObject();
                 
                 if (responseObject.get("success").getAsBoolean()) {
                     JsonObject userJson = responseObject.get("user").getAsJsonObject();
@@ -155,7 +151,7 @@ public class CloudSessionUserService {
                 } else {
                     String message = responseObject.get("message").getAsString();
                     if (responseObject.get("code").getAsInt() == 400) {
-                        throw new UnknownUserException(screenname, message);
+                        throw new UnknownUserException(screenName, message);
                     } else {
                         return null;
                     }
@@ -187,24 +183,28 @@ public class CloudSessionUserService {
             ServerException,
             EmailNotConfirmedException {
 
-        LOG.info("Contacting endpoint '/user/id/{uid}");
+        LOG.info("Contacting endpoint '/user/id/{}", idUser);
         
         try {
             HttpRequest request = HttpRequest.get(getUrl("/user/id/" + idUser));
             
             if (request.ok()) {
-                LOG.info("Endpoint reports success");
+                LOG.debug("CloudSession /user/id/{} endpoint reports success", idUser);
 
+                // Get the details returned from the service
                 String response = request.body();
-                JsonElement jelement = new JsonParser().parse(response);
-                JsonObject responseObject = jelement.getAsJsonObject();
+
+                JsonElement jsonElement = new JsonParser().parse(response);
+                JsonObject responseObject = jsonElement.getAsJsonObject();
                 
                 if (responseObject.get("success").getAsBoolean()) {
-                    LOG.info("Payload reports success.");
+                    LOG.debug("CloudSession payload reports success.");
                     JsonObject userJson = responseObject.get("user").getAsJsonObject();
+
+                    LOG.debug("User object: {}", userJson.toString());
                     return populateUser(userJson);
                 } else {
-                    LOG.error("Payload reports error code: {}", responseObject.get("code"));
+                    LOG.error("CloudSession payload reports error code: {}", responseObject.get("code"));
                     int resultCode = responseObject.get("code").getAsInt();
                     
                     if (resultCode == 400) {
@@ -340,11 +340,14 @@ public class CloudSessionUserService {
     /**
      * Populate an user object from a JSON document
      * 
-     * @param userJson
-     * @return 
+     * @param userJson is a Json object that contains user profile details
+     *
+     * @return a fully populated CloudSession User object
      */
     private User populateUser(JsonObject userJson) {
-        
+
+        LOG.debug("Hydrating CloudSession User object from Json data");
+
         User user = new User();
         
         user.setId(userJson.get("id").getAsLong());
@@ -365,7 +368,8 @@ public class CloudSessionUserService {
         }
                 
         user.setCoachEmailSource(userJson.get("parent-email-source").getAsInt());
-                
+        LOG.debug("Returning a hydrated CloudSession User object");
+
         return user;
     }
 }
