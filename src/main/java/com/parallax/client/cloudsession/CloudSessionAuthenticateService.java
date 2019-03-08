@@ -50,21 +50,13 @@ import org.slf4j.LoggerFactory;
  */
 public class CloudSessionAuthenticateService {
 
-    /**
-     * Handle for any logging activity
-     */
+    // Handle for any logging activity
     private final Logger LOG = LoggerFactory.getLogger(CloudSessionAuthenticateService.class);
-    
-    
-    /**
-     * Base URL use to obtain authentication service.
-     */
+
+    // Base URL use to obtain authentication service.
     private final String BASE_URL;
     
-    
-    /**
-     * Host name
-     */
+    //Host name
     private final String SERVER;
 
     /**
@@ -83,15 +75,32 @@ public class CloudSessionAuthenticateService {
     /**
      * Authenticate user from local authentication database
      * 
-     * @param login
-     * @param password
-     * @return
-     * @throws UnknownUserException
-     * @throws UserBlockedException
-     * @throws EmailNotConfirmedException
+     * @param login is the user email address
+     * @param password is the password entered for the login attempt
+     *
+     * @return a User object if successful, otherwise return null
+     *
+     * @throws UnknownUserException is thrown when the user email address is not found
+     *
+     * @throws UserBlockedException is an exception thrown when the requested user
+     *                              account is blockled
+     *
+     * @throws EmailNotConfirmedException is thrown when the requested account is pending
+     *                                    email verification
+     *
      * @throws InsufficientBucketTokensException
+     *      is thrown when the requested activity has occurred too many times within
+     *      a specified period of time.
+     *
      * @throws WrongAuthenticationSourceException
+     *      is thrown when the login attempt is using local authentication when the account
+     *      has been set up to use OAuth or when the login attempt is using OAuth when the
+     *      account was set up for local authentication
+     *
      * @throws ServerException
+     *      is thrown when something really bad happens. Think environment or failed access
+     *      to the Cloud Session server
+     *
      */
     public User authenticateLocalUser(String login, String password) 
             throws
@@ -102,18 +111,18 @@ public class CloudSessionAuthenticateService {
                 WrongAuthenticationSourceException, 
                 ServerException {
 
-        JsonObject responseObject = null;
+        JsonObject responseObject;
 
         try {
             Map<String, String> data = new HashMap<>();
             data.put("email", login);
             data.put("password", password);
     
-            LOG.info("Contacting endpoint {}", getUrl("/authenticate/local"));
+            LOG.info("Contacting endpoint {}", BASE_URL + "/authenticate/local");
 
             // Issue POST request to attempt login
             HttpRequest request = HttpRequest
-                    .post(getUrl("/authenticate/local"))
+                    .post(BASE_URL + "/authenticate/local")
                     .header("server", SERVER)
                     .form(data);
 
@@ -202,14 +211,4 @@ public class CloudSessionAuthenticateService {
         
         return null;
     }   
-
-    /**
-     * Prepend the base url to the action url
-     * 
-     * @param actionUrl
-     * @return 
-     */
-    private String getUrl(String actionUrl) {
-        return BASE_URL + actionUrl;
-    }
 }
